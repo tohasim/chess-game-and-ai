@@ -20,9 +20,7 @@ body {
 
 .white {
 	background-color: white;
-	color: black;
 }
 .black {
-	background-color: black;
-	color: white;
+	background-color: rgb(88, 38, 7);
 }
