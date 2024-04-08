@@ -16,6 +16,7 @@ body {
 	text-align: center;
 	justify-items: center;
 	line-height: 64px;
+	cursor: pointer;
 }
 
 .white {
@@ -23,4 +24,12 @@ body {
 }
 .black {
 	background-color: rgb(88, 38, 7);
+}
+
+.highlight {
+	background-color: goldenrod;
+}
+
+.kill {
+	background-color: red;
 }
