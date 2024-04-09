@@ -4,30 +4,76 @@ window.addEventListener("load", init);
 
 //#region CONTROLLER
 
+let selectedPiece = null;
+
 function init() {
-	console.log("Js kører");
-	initModel();
-	initBoard();
+    console.log("Js kører");
+    initModel();
+    initBoard();
+    addEventListeners();
 }
+
+function addEventListeners() {
+    const cells = document.querySelectorAll(".cell");
+    cells.forEach(cell => {
+        cell.addEventListener("click", () => {
+            if (selectedPiece) {
+                // Move the selected piece to the clicked cell
+                const targetRow = parseInt(cell.dataset.row);
+                const targetCol = parseInt(cell.dataset.col);
+                movePiece(selectedPiece, targetRow, targetCol);
+                selectedPiece = null; // Reset selected piece after moving
+            } else {
+                // If no piece is selected, select the clicked piece
+                const row = parseInt(cell.dataset.row);
+                const col = parseInt(cell.dataset.col);
+                selectedPiece = model[row][col];
+            }
+        });
+    });
+}
+
+function movePiece(piece, targetRow, targetCol) {
+    // Move the piece to the target position
+    const currentRow = piece.row;
+    const currentCol = piece.col;
+
+    // Update model
+    model[targetRow][targetCol] = piece;
+    model[currentRow][currentCol] = new Piece(); // Clear the current cell
+
+    // Update view
+    const board = document.getElementById("board");
+    const targetCell = board.querySelector(`.cell[data-row="${targetRow}"][data-col="${targetCol}"]`);
+    const currentCell = board.querySelector(`.cell[data-row="${currentRow}"][data-col="${currentCol}"]`);
+
+    targetCell.style.backgroundImage = `url(${piece.icon})`;
+    targetCell.style.backgroundSize = "cover";
+
+    currentCell.style.backgroundImage = ""; // Remove background image from current cell
+}
+
 //#endregion
 
 //#region VIEW
 function initBoard() {
-	const board = document.getElementById("board");
-	for (let i = 7; i >= 0; i--) {
-		for (let j = 0; j < 8; j++) {
-			const newCell = document.createElement("div");
-			newCell.classList.add("cell");
-			(i + 1 * 8 + j) % 2 === 0
-				? newCell.classList.add("black")
-				: newCell.classList.add("white");
-			if (model[i][j].icon != null) {
-				newCell.style.backgroundImage = `url(${model[i][j].icon})`;
-				newCell.style.backgroundSize = "cover";
-			}
-			board.appendChild(newCell);
-		}
-	}
+    const board = document.getElementById("board");
+    for (let i = 7; i >= 0; i--) {
+        for (let j = 0; j < 8; j++) {
+            const newCell = document.createElement("div");
+            newCell.classList.add("cell");
+            newCell.dataset.row = i;
+            newCell.dataset.col = j;
+            (i + 1 * 8 + j) % 2 === 0
+                ? newCell.classList.add("black")
+                : newCell.classList.add("white");
+            if (model[i][j].icon != null) {
+                newCell.style.backgroundImage = `url(${model[i][j].icon})`;
+                newCell.style.backgroundSize = "cover";
+            }
+            board.appendChild(newCell);
+        }
+    }
 }
 //#endregion
 
