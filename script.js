@@ -43,6 +43,7 @@ function showBoard() {
 			let index = i * 8 + j;
 			const newCell = document.createElement("div");
 			newCell.setAttribute("data-index", index);
+			//newCell.textContent = `${model[i][j].color}${model[i][j].value}`;
 			newCell.classList.add("cell");
 			(i + 1 * 8 + j) % 2 === 0
 				? newCell.classList.add("black")
@@ -60,12 +61,6 @@ function highlightMove(move) {
 	const index = 63 - (7 - move[1]) - move[0] * 8;
 	const cells = document.querySelectorAll(".cell");
 	cells[index].classList.add("highlight");
-}
-
-function highlightKill(kill) {
-	const index = 63 - (7 - kill[1]) - kill[0] * 8;
-	const cells = document.querySelectorAll(".cell");
-	cells[index].classList.add("kill");
 }
 //#endregion
 
@@ -192,6 +187,15 @@ function getAvailableMoves(piece) {
 				rowCounter++;
 				moves.push([rowCounter, colCounter]);
 			}
+			if (
+				piece.row + rowCounter != 7 &&
+				model[piece.row + rowCounter + 1][piece.col + colCounter].color !==
+					"" &&
+				model[piece.row + rowCounter + 1][piece.col + colCounter].color !==
+					piece.color
+			) {
+				moves.push([rowCounter + 1, colCounter]);
+			}
 			rowCounter = 0;
 			colCounter = 0;
 			while (
@@ -200,6 +204,15 @@ function getAvailableMoves(piece) {
 			) {
 				colCounter--;
 				moves.push([rowCounter, colCounter]);
+				if (
+					piece.col + colCounter != 0 &&
+					model[piece.row + rowCounter][piece.col + colCounter - 1].color !==
+						"" &&
+					model[piece.row + rowCounter][piece.col + colCounter - 1].color !==
+						piece.color
+				) {
+					moves.push([rowCounter, colCounter - 1]);
+				}
 			}
 			rowCounter = 0;
 			colCounter = 0;
@@ -210,6 +223,16 @@ function getAvailableMoves(piece) {
 				rowCounter--;
 				moves.push([rowCounter, colCounter]);
 			}
+
+			if (
+				piece.row + rowCounter != 0 &&
+				model[piece.row + rowCounter - 1][piece.col + colCounter].color !==
+					"" &&
+				model[piece.row + rowCounter - 1][piece.col + colCounter].color !==
+					piece.color
+			) {
+				moves.push([rowCounter - 1, colCounter]);
+			}
 			rowCounter = 0;
 			colCounter = 0;
 			while (
@@ -218,6 +241,16 @@ function getAvailableMoves(piece) {
 			) {
 				colCounter++;
 				moves.push([rowCounter, colCounter]);
+			}
+
+			if (
+				piece.col + colCounter != 7 &&
+				model[piece.row + rowCounter][piece.col + colCounter + 1].color !==
+					"" &&
+				model[piece.row + rowCounter][piece.col + colCounter + 1].color !==
+					piece.color
+			) {
+				moves.push([rowCounter, colCounter + 1]);
 			}
 			break;
 		}
@@ -242,7 +275,9 @@ function getAvailableMoves(piece) {
 					newRow <= 7 &&
 					newCol >= 0 &&
 					newCol <= 7 &&
-					model[newRow][newCol].value === ""
+					(model[newRow][newCol].value === "" ||
+						(model[newRow][newCol].color !== "" &&
+							model[newRow][newCol].color !== piece.color))
 				) {
 					moves.push([offset[0], offset[1]]);
 				}
@@ -263,6 +298,16 @@ function getAvailableMoves(piece) {
 				colCounter++;
 				moves.push([rowCounter, colCounter]);
 			}
+			if (
+				piece.row + rowCounter != 7 &&
+				piece.col + colCounter != 7 &&
+				model[piece.row + rowCounter + 1][piece.col + colCounter + 1].color !==
+					"" &&
+				model[piece.row + rowCounter + 1][piece.col + colCounter + 1].color !==
+					piece.color
+			) {
+				moves.push([rowCounter + 1, colCounter + 1]);
+			}
 			rowCounter = 0;
 			colCounter = 0;
 			while (
@@ -274,6 +319,16 @@ function getAvailableMoves(piece) {
 				rowCounter++;
 				colCounter--;
 				moves.push([rowCounter, colCounter]);
+			}
+			if (
+				piece.row + rowCounter != 7 &&
+				piece.col + colCounter != 0 &&
+				model[piece.row + rowCounter + 1][piece.col + colCounter - 1].color !==
+					"" &&
+				model[piece.row + rowCounter + 1][piece.col + colCounter - 1].color !==
+					piece.color
+			) {
+				moves.push([rowCounter + 1, colCounter - 1]);
 			}
 			rowCounter = 0;
 			colCounter = 0;
@@ -287,6 +342,16 @@ function getAvailableMoves(piece) {
 				colCounter--;
 				moves.push([rowCounter, colCounter]);
 			}
+			if (
+				piece.row + rowCounter != 0 &&
+				piece.col + colCounter != 0 &&
+				model[piece.row + rowCounter - 1][piece.col + colCounter - 1].color !==
+					"" &&
+				model[piece.row + rowCounter - 1][piece.col + colCounter - 1].color !==
+					piece.color
+			) {
+				moves.push([rowCounter - 1, colCounter - 1]);
+			}
 			rowCounter = 0;
 			colCounter = 0;
 			while (
@@ -298,6 +363,16 @@ function getAvailableMoves(piece) {
 				rowCounter--;
 				colCounter++;
 				moves.push([rowCounter, colCounter]);
+			}
+			if (
+				piece.row + rowCounter != 0 &&
+				piece.col + colCounter != 7 &&
+				model[piece.row + rowCounter - 1][piece.col + colCounter + 1].color !==
+					"" &&
+				model[piece.row + rowCounter - 1][piece.col + colCounter + 1].color !==
+					piece.color
+			) {
+				moves.push([rowCounter - 1, colCounter + 1]);
 			}
 			break;
 		}
@@ -322,7 +397,9 @@ function getAvailableMoves(piece) {
 					newRow <= 7 &&
 					newCol >= 0 &&
 					newCol <= 7 &&
-					model[newRow][newCol].value === ""
+					(model[newRow][newCol].value === "" ||
+						(model[newRow][newCol].color !== "" &&
+							model[newRow][newCol].color !== piece.color))
 				) {
 					moves.push([offset[0], offset[1]]);
 				}
@@ -340,6 +417,15 @@ function getAvailableMoves(piece) {
 				rowCounter++;
 				moves.push([rowCounter, colCounter]);
 			}
+			if (
+				piece.row + rowCounter != 7 &&
+				model[piece.row + rowCounter + 1][piece.col + colCounter].color !==
+					"" &&
+				model[piece.row + rowCounter + 1][piece.col + colCounter].color !==
+					piece.color
+			) {
+				moves.push([rowCounter + 1, colCounter]);
+			}
 			rowCounter = 0;
 			colCounter = 0;
 			while (
@@ -348,6 +434,15 @@ function getAvailableMoves(piece) {
 			) {
 				colCounter--;
 				moves.push([rowCounter, colCounter]);
+			}
+			if (
+				piece.col + colCounter != 0 &&
+				model[piece.row + rowCounter][piece.col + colCounter - 1].color !==
+					"" &&
+				model[piece.row + rowCounter][piece.col + colCounter - 1].color !==
+					piece.color
+			) {
+				moves.push([rowCounter, colCounter - 1]);
 			}
 			rowCounter = 0;
 			colCounter = 0;
@@ -358,6 +453,15 @@ function getAvailableMoves(piece) {
 				rowCounter--;
 				moves.push([rowCounter, colCounter]);
 			}
+			if (
+				piece.row + rowCounter != 0 &&
+				model[piece.row + rowCounter - 1][piece.col + colCounter].color !==
+					"" &&
+				model[piece.row + rowCounter - 1][piece.col + colCounter].color !==
+					piece.color
+			) {
+				moves.push([rowCounter - 1, colCounter]);
+			}
 			rowCounter = 0;
 			colCounter = 0;
 			while (
@@ -367,7 +471,15 @@ function getAvailableMoves(piece) {
 				colCounter++;
 				moves.push([rowCounter, colCounter]);
 			}
-
+			if (
+				piece.col + colCounter != 7 &&
+				model[piece.row + rowCounter][piece.col + colCounter + 1].color !==
+					"" &&
+				model[piece.row + rowCounter][piece.col + colCounter + 1].color !==
+					piece.color
+			) {
+				moves.push([rowCounter, colCounter + 1]);
+			}
 			rowCounter = 0;
 			colCounter = 0;
 			while (
@@ -379,6 +491,16 @@ function getAvailableMoves(piece) {
 				rowCounter++;
 				colCounter++;
 				moves.push([rowCounter, colCounter]);
+			}
+			if (
+				piece.row + rowCounter != 7 &&
+				piece.col + colCounter != 7 &&
+				model[piece.row + rowCounter + 1][piece.col + colCounter + 1].color !==
+					"" &&
+				model[piece.row + rowCounter + 1][piece.col + colCounter + 1].color !==
+					piece.color
+			) {
+				moves.push([rowCounter + 1, colCounter + 1]);
 			}
 			rowCounter = 0;
 			colCounter = 0;
@@ -392,6 +514,16 @@ function getAvailableMoves(piece) {
 				colCounter--;
 				moves.push([rowCounter, colCounter]);
 			}
+			if (
+				piece.row + rowCounter != 7 &&
+				piece.col + colCounter != 0 &&
+				model[piece.row + rowCounter + 1][piece.col + colCounter - 1].color !==
+					"" &&
+				model[piece.row + rowCounter + 1][piece.col + colCounter - 1].color !==
+					piece.color
+			) {
+				moves.push([rowCounter + 1, colCounter - 1]);
+			}
 			rowCounter = 0;
 			colCounter = 0;
 			while (
@@ -404,6 +536,16 @@ function getAvailableMoves(piece) {
 				colCounter--;
 				moves.push([rowCounter, colCounter]);
 			}
+			if (
+				piece.row + rowCounter != 0 &&
+				piece.col + colCounter != 0 &&
+				model[piece.row + rowCounter - 1][piece.col + colCounter - 1].color !==
+					"" &&
+				model[piece.row + rowCounter - 1][piece.col + colCounter - 1].color !==
+					piece.color
+			) {
+				moves.push([rowCounter - 1, colCounter - 1]);
+			}
 			rowCounter = 0;
 			colCounter = 0;
 			while (
@@ -415,6 +557,16 @@ function getAvailableMoves(piece) {
 				rowCounter--;
 				colCounter++;
 				moves.push([rowCounter, colCounter]);
+			}
+			if (
+				piece.row + rowCounter != 0 &&
+				piece.col + colCounter != 7 &&
+				model[piece.row + rowCounter - 1][piece.col + colCounter + 1].color !==
+					"" &&
+				model[piece.row + rowCounter - 1][piece.col + colCounter + 1].color !==
+					piece.color
+			) {
+				moves.push([rowCounter - 1, colCounter + 1]);
 			}
 			break;
 		}
@@ -431,10 +583,10 @@ function getAvailableMoves(piece) {
 function movePieceInModel(piece, cell) {
 	const index = cell.getAttribute("data-index");
 	const modelCpy = model.map((element) => ({ ...element }));
-	modelCpy[piece.row][piece.col] = model[Math.floor(index / 8)][index % 8];
+	modelCpy[piece.row][piece.col] = new Piece();
 	piece.row = Math.floor(index / 8);
 	piece.col = index % 8;
-	modelCpy[Math.floor(piece.row)][piece.col] = piece;
+	modelCpy[piece.row][piece.col] = piece;
 	model = modelCpy.map((element) => ({ ...element }));
 	piece.moves++;
 }
