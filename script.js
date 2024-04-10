@@ -7,7 +7,6 @@ window.addEventListener("load", init);
 let chosenPiece;
 
 function init() {
-	console.log("Js kører");
 	initModel();
 	showBoard();
 	board.addEventListener("click", (event) => handleClicks(event));
@@ -204,15 +203,15 @@ function getAvailableMoves(piece) {
 			) {
 				colCounter--;
 				moves.push([rowCounter, colCounter]);
-				if (
-					piece.col + colCounter != 0 &&
-					model[piece.row + rowCounter][piece.col + colCounter - 1].color !==
-						"" &&
-					model[piece.row + rowCounter][piece.col + colCounter - 1].color !==
-						piece.color
-				) {
-					moves.push([rowCounter, colCounter - 1]);
-				}
+			}
+			if (
+				piece.col + colCounter != 0 &&
+				model[piece.row + rowCounter][piece.col + colCounter - 1].color !==
+					"" &&
+				model[piece.row + rowCounter][piece.col + colCounter - 1].color !==
+					piece.color
+			) {
+				moves.push([rowCounter, colCounter - 1]);
 			}
 			rowCounter = 0;
 			colCounter = 0;
