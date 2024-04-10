@@ -5,6 +5,8 @@ window.addEventListener("load", init);
 //#region CONTROLLER
 
 let chosenPiece;
+let moveCounter = 0;
+let gameOver = false;
 
 function init() {
 	initModel();
@@ -18,6 +20,10 @@ function handleClicks(event) {
 		if (cell.classList.contains("highlight")) {
 			movePieceInModel(chosenPiece, cell);
 			showBoard();
+			moveCounter ++;
+			showMoveCounter();
+		} else if (moveCounter === 100) {
+			stopGame()
 		} else {
 			document
 				.querySelectorAll(".highlight")
@@ -25,11 +31,13 @@ function handleClicks(event) {
 			const index = event.target.getAttribute("data-index");
 			chosenPiece = model[Math.floor(index / 8)][index % 8];
 			console.log(chosenPiece);
+			console.log(chosenPiece.moves)
 			let moves = getAvailableMoves(chosenPiece);
 			moves.forEach((move) => highlightMove(move));
 		}
 	}
 }
+
 //#endregion
 
 //#region VIEW
@@ -61,6 +69,22 @@ function highlightMove(move) {
 	const cells = document.querySelectorAll(".cell");
 	cells[index].classList.add("highlight");
 }
+
+function showMoveCounter() {
+	let moveCounterElement = document.getElementById("moveCounter");
+	moveCounterElement.textContent = "Move nr. " + (moveCounter / 2);
+}
+
+function stopGame () {
+	gameOver = true;
+	showGameOverPopup();
+}
+
+function showGameOverPopup() {
+ //Create a nice pop up window with a piece counter
+}
+
+
 //#endregion
 
 //#region MODEL

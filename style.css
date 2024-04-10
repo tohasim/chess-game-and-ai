@@ -34,3 +34,14 @@ body {
 .kill {
 	background-color: red;
 }
+
+#moveCounter {
+	display: flex;
+	justify-content: center;
+	font-size: 40px;
+	margin: 30px;
+
+}
+
+
+/*Styles for pop up window*/
