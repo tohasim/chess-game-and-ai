@@ -16,28 +16,30 @@ function init() {
 
 function handleClicks(event) {
 	const cell = event.target;
-	if (cell.classList.contains("cell")) {
+	if (cell.classList.contains("cell") && gameOver === false) {
 		if (cell.classList.contains("highlight")) {
 			movePieceInModel(chosenPiece, cell);
 			showBoard();
 			moveCounter++;
 			showMoveCounter();
-		}
-		if (moveCounter === 100) {
-			$("#exampleModalToggle").modal('show');
-			gameOver = true;
-			document.getElementById("center-button").style.display = "flex";
+			//console.log(chosenPiece);
 		} else {
 			document
 				.querySelectorAll(".highlight")
 				.forEach((cell) => cell.classList.remove("highlight"));
 			const index = event.target.getAttribute("data-index");
 			chosenPiece = model[Math.floor(index / 8)][index % 8];
-			console.log(chosenPiece);
-			console.log(chosenPiece.moves)
+			//console.log(chosenPiece);
+			//console.log(chosenPiece.moves)
+			//showHowManyTimesEachPieceHasMoved()
 			let moves = getAvailableMoves(chosenPiece);
 			moves.forEach((move) => highlightMove(move));
 		}
+	} if (moveCounter === 100) {
+		$("#exampleModalToggle").modal('show');
+		gameOver = true;
+		document.getElementById("center-button").style.display = "flex";
+		showHowManyTimesEachPieceHasMoved()
 	}
 }
 
@@ -76,6 +78,14 @@ function highlightMove(move) {
 function showMoveCounter() {
 	let moveCounterElement = document.getElementById("moveCounter");
 	moveCounterElement.textContent = "Move nr. " + (moveCounter / 2);
+}
+
+function showHowManyTimesEachPieceHasMoved() {
+	let pieceMovesHistory = document.getElementById("piece");
+	let pluralOrSingle = "times";
+	if (chosenPiece.moves === 1) {pluralOrSingle = "time"}
+	const pieceMoves = chosenPiece.color + " " + chosenPiece.value + " has moved " + chosenPiece.moves + " " + pluralOrSingle;
+	pieceMovesHistory.textContent = pieceMoves;
 }
 
 //#endregion
