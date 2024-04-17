@@ -221,6 +221,32 @@ function getAvailableMoves(piece) {
 				) {
 					moves.push([-1, 1]);
 				}
+				//En passant move
+				if (
+					piece.row === 3 &&
+					model[piece.row][piece.col - 1].value === "p" &&
+					model[piece.row][piece.col - 1].color === "w" &&
+					model[piece.row][piece.col - 1].moves === 1
+				) {
+					moves.push([-1, -1]);
+				}
+				if (
+					piece.row === 3 &&
+					model[piece.row][piece.col + 1].value === "p" &&
+					model[piece.row][piece.col + 1].color === "w" &&
+					model[piece.row][piece.col + 1].moves === 1
+				) {
+					moves.push([-1, 1]);
+				}
+				// pawn promotion
+				if (piece.row === 1) {
+					moves = moves.map((move) => {
+						move.push("q");
+						return move;
+					});
+				}
+
+				
 			} else {
 				//Same as above, but for white pawns
 				if (model[piece.row + 1][piece.col].value === "") {
@@ -243,6 +269,30 @@ function getAvailableMoves(piece) {
 					model[piece.row + 1][piece.col + 1].color === "b"
 				) {
 					moves.push([1, 1]);
+				}
+				//En passant move
+				if (
+					piece.row === 4 &&
+					model[piece.row][piece.col - 1].value === "p" &&
+					model[piece.row][piece.col - 1].color === "b" &&
+					model[piece.row][piece.col - 1].moves === 1
+				) {
+					moves.push([1, -1]);
+				}
+				if (
+					piece.row === 4 &&
+					model[piece.row][piece.col + 1].value === "p" &&
+					model[piece.row][piece.col + 1].color === "b" &&
+					model[piece.row][piece.col + 1].moves === 1
+				) {
+					moves.push([1, 1]);
+				}
+				// pawn promotion
+				if (piece.row === 6) {
+					moves = moves.map((move) => {
+						move.push("q");
+						return move;
+					});
 				}
 			}
 			break;
@@ -478,6 +528,25 @@ function getAvailableMoves(piece) {
 					moves.push([offset[0], offset[1]]);
 				}
 			});
+			// castling move check rook as well
+			if (piece.moves === 0) {
+				if (
+					model[piece.row][0].moves === 0 &&
+					model[piece.row][1].value === "" &&
+					model[piece.row][2].value === "" &&
+					model[piece.row][3].value === ""
+				) {
+					moves.push([0, -2]);
+				}
+				if (
+					model[piece.row][7].moves === 0 &&
+					model[piece.row][6].value === "" &&
+					model[piece.row][5].value === ""
+				) {
+					moves.push([0, 2]);
+				}
+			}
+
 
 			break;
 		}
@@ -671,6 +740,22 @@ function movePieceInModel(piece, cell) {
 	model = modelCpy.map((element) => ({ ...element }));
 	//Add a move to the piece
 	piece.moves++;
+	// pawn promotion
+	if (piece.value === "p" && (piece.row === 0 || piece.row === 7)) {
+		model[piece.row][piece.col].value = "q";
+	}
+	// castling move
+	if (piece.value === "k" && Math.abs(piece.col - index % 8) === 2) {
+		if (piece.col - index % 8 === -2) {
+			model[piece.row][7].col = 5;
+			model[piece.row][5] = model[piece.row][7];
+			model[piece.row][7] = new Piece();
+		} else {
+			model[piece.row][0].col = 3;
+			model[piece.row][3] = model[piece.row][0];
+			model[piece.row][0] = new Piece();
+		}
+	}
 }
 
 function checkCheck(piece) {
