@@ -9,6 +9,9 @@ body {
 	grid-template-columns: repeat(8, max-content);
 	border: 1px solid black;
 }
+#game-state {
+	margin: 5px;
+}
 .cell {
 	border: 1px solid black;
 	aspect-ratio: 1/1;
