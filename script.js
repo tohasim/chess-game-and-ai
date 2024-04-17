@@ -16,25 +16,30 @@ function init() {
 
 function handleClicks(event) {
 	const cell = event.target;
-	if (cell.classList.contains("cell")) {
+	if (cell.classList.contains("cell") && gameOver === false) {
 		if (cell.classList.contains("highlight")) {
 			movePieceInModel(chosenPiece, cell);
 			showBoard();
-			moveCounter ++;
+			moveCounter++;
 			showMoveCounter();
-		} else if (moveCounter === 100) {
-			stopGame()
+			//console.log(chosenPiece);
 		} else {
 			document
 				.querySelectorAll(".highlight")
 				.forEach((cell) => cell.classList.remove("highlight"));
 			const index = event.target.getAttribute("data-index");
 			chosenPiece = model[Math.floor(index / 8)][index % 8];
-			console.log(chosenPiece);
-			console.log(chosenPiece.moves)
+			//console.log(chosenPiece);
+			//console.log(chosenPiece.moves)
+			//showHowManyTimesEachPieceHasMoved()
 			let moves = getAvailableMoves(chosenPiece);
 			moves.forEach((move) => highlightMove(move));
 		}
+	} if (moveCounter === 100) {
+		$("#exampleModalToggle").modal('show');
+		gameOver = true;
+		document.getElementById("center-button").style.display = "flex";
+		showHowManyTimesEachPieceHasMoved()
 	}
 }
 
@@ -75,15 +80,13 @@ function showMoveCounter() {
 	moveCounterElement.textContent = "Move nr. " + (moveCounter / 2);
 }
 
-function stopGame () {
-	gameOver = true;
-	showGameOverPopup();
+function showHowManyTimesEachPieceHasMoved() {
+	let pieceMovesHistory = document.getElementById("piece");
+	let pluralOrSingle = "times";
+	if (chosenPiece.moves === 1) {pluralOrSingle = "time"}
+	const pieceMoves = chosenPiece.color + " " + chosenPiece.value + " has moved " + chosenPiece.moves + " " + pluralOrSingle;
+	pieceMovesHistory.textContent = pieceMoves;
 }
-
-function showGameOverPopup() {
- //Create a nice pop up window with a piece counter
-}
-
 
 //#endregion
 
@@ -100,6 +103,7 @@ class Piece {
 }
 
 let model = [];
+
 function initModel() {
 	let row = [];
 	row.push(new Piece("w", "r", 0, 0, "Chess_pieces/WhiteRook.png"));
@@ -206,16 +210,16 @@ function getAvailableMoves(piece) {
 			while (
 				rowCounter + piece.row < 7 &&
 				model[piece.row + rowCounter + 1][piece.col + colCounter].value === ""
-			) {
+				) {
 				rowCounter++;
 				moves.push([rowCounter, colCounter]);
 			}
 			if (
 				piece.row + rowCounter != 7 &&
 				model[piece.row + rowCounter + 1][piece.col + colCounter].color !==
-					"" &&
+				"" &&
 				model[piece.row + rowCounter + 1][piece.col + colCounter].color !==
-					piece.color
+				piece.color
 			) {
 				moves.push([rowCounter + 1, colCounter]);
 			}
@@ -224,16 +228,16 @@ function getAvailableMoves(piece) {
 			while (
 				colCounter + piece.col > 0 &&
 				model[piece.row + rowCounter][piece.col + colCounter - 1].value === ""
-			) {
+				) {
 				colCounter--;
 				moves.push([rowCounter, colCounter]);
 			}
 			if (
 				piece.col + colCounter != 0 &&
 				model[piece.row + rowCounter][piece.col + colCounter - 1].color !==
-					"" &&
+				"" &&
 				model[piece.row + rowCounter][piece.col + colCounter - 1].color !==
-					piece.color
+				piece.color
 			) {
 				moves.push([rowCounter, colCounter - 1]);
 			}
@@ -242,7 +246,7 @@ function getAvailableMoves(piece) {
 			while (
 				rowCounter + piece.row > 0 &&
 				model[piece.row + rowCounter - 1][piece.col + colCounter].value === ""
-			) {
+				) {
 				rowCounter--;
 				moves.push([rowCounter, colCounter]);
 			}
@@ -250,9 +254,9 @@ function getAvailableMoves(piece) {
 			if (
 				piece.row + rowCounter != 0 &&
 				model[piece.row + rowCounter - 1][piece.col + colCounter].color !==
-					"" &&
+				"" &&
 				model[piece.row + rowCounter - 1][piece.col + colCounter].color !==
-					piece.color
+				piece.color
 			) {
 				moves.push([rowCounter - 1, colCounter]);
 			}
@@ -261,7 +265,7 @@ function getAvailableMoves(piece) {
 			while (
 				colCounter + piece.col < 7 &&
 				model[piece.row + rowCounter][piece.col + colCounter + 1].value === ""
-			) {
+				) {
 				colCounter++;
 				moves.push([rowCounter, colCounter]);
 			}
@@ -269,9 +273,9 @@ function getAvailableMoves(piece) {
 			if (
 				piece.col + colCounter != 7 &&
 				model[piece.row + rowCounter][piece.col + colCounter + 1].color !==
-					"" &&
+				"" &&
 				model[piece.row + rowCounter][piece.col + colCounter + 1].color !==
-					piece.color
+				piece.color
 			) {
 				moves.push([rowCounter, colCounter + 1]);
 			}
@@ -315,8 +319,8 @@ function getAvailableMoves(piece) {
 				rowCounter + piece.row < 7 &&
 				colCounter + piece.col < 7 &&
 				model[piece.row + rowCounter + 1][piece.col + colCounter + 1].value ===
-					""
-			) {
+				""
+				) {
 				rowCounter++;
 				colCounter++;
 				moves.push([rowCounter, colCounter]);
@@ -325,9 +329,9 @@ function getAvailableMoves(piece) {
 				piece.row + rowCounter != 7 &&
 				piece.col + colCounter != 7 &&
 				model[piece.row + rowCounter + 1][piece.col + colCounter + 1].color !==
-					"" &&
+				"" &&
 				model[piece.row + rowCounter + 1][piece.col + colCounter + 1].color !==
-					piece.color
+				piece.color
 			) {
 				moves.push([rowCounter + 1, colCounter + 1]);
 			}
@@ -337,8 +341,8 @@ function getAvailableMoves(piece) {
 				rowCounter + piece.row < 7 &&
 				colCounter + piece.col > 0 &&
 				model[piece.row + rowCounter + 1][piece.col + colCounter - 1].value ===
-					""
-			) {
+				""
+				) {
 				rowCounter++;
 				colCounter--;
 				moves.push([rowCounter, colCounter]);
@@ -347,9 +351,9 @@ function getAvailableMoves(piece) {
 				piece.row + rowCounter != 7 &&
 				piece.col + colCounter != 0 &&
 				model[piece.row + rowCounter + 1][piece.col + colCounter - 1].color !==
-					"" &&
+				"" &&
 				model[piece.row + rowCounter + 1][piece.col + colCounter - 1].color !==
-					piece.color
+				piece.color
 			) {
 				moves.push([rowCounter + 1, colCounter - 1]);
 			}
@@ -359,8 +363,8 @@ function getAvailableMoves(piece) {
 				rowCounter + piece.row > 0 &&
 				colCounter + piece.col > 0 &&
 				model[piece.row + rowCounter - 1][piece.col + colCounter - 1].value ===
-					""
-			) {
+				""
+				) {
 				rowCounter--;
 				colCounter--;
 				moves.push([rowCounter, colCounter]);
@@ -369,9 +373,9 @@ function getAvailableMoves(piece) {
 				piece.row + rowCounter != 0 &&
 				piece.col + colCounter != 0 &&
 				model[piece.row + rowCounter - 1][piece.col + colCounter - 1].color !==
-					"" &&
+				"" &&
 				model[piece.row + rowCounter - 1][piece.col + colCounter - 1].color !==
-					piece.color
+				piece.color
 			) {
 				moves.push([rowCounter - 1, colCounter - 1]);
 			}
@@ -381,8 +385,8 @@ function getAvailableMoves(piece) {
 				rowCounter + piece.row > 0 &&
 				colCounter + piece.col < 7 &&
 				model[piece.row + rowCounter - 1][piece.col + colCounter + 1].value ===
-					""
-			) {
+				""
+				) {
 				rowCounter--;
 				colCounter++;
 				moves.push([rowCounter, colCounter]);
@@ -391,9 +395,9 @@ function getAvailableMoves(piece) {
 				piece.row + rowCounter != 0 &&
 				piece.col + colCounter != 7 &&
 				model[piece.row + rowCounter - 1][piece.col + colCounter + 1].color !==
-					"" &&
+				"" &&
 				model[piece.row + rowCounter - 1][piece.col + colCounter + 1].color !==
-					piece.color
+				piece.color
 			) {
 				moves.push([rowCounter - 1, colCounter + 1]);
 			}
@@ -436,16 +440,16 @@ function getAvailableMoves(piece) {
 			while (
 				rowCounter + piece.row < 7 &&
 				model[piece.row + rowCounter + 1][piece.col + colCounter].value === ""
-			) {
+				) {
 				rowCounter++;
 				moves.push([rowCounter, colCounter]);
 			}
 			if (
 				piece.row + rowCounter != 7 &&
 				model[piece.row + rowCounter + 1][piece.col + colCounter].color !==
-					"" &&
+				"" &&
 				model[piece.row + rowCounter + 1][piece.col + colCounter].color !==
-					piece.color
+				piece.color
 			) {
 				moves.push([rowCounter + 1, colCounter]);
 			}
@@ -454,16 +458,16 @@ function getAvailableMoves(piece) {
 			while (
 				colCounter + piece.col > 0 &&
 				model[piece.row + rowCounter][piece.col + colCounter - 1].value === ""
-			) {
+				) {
 				colCounter--;
 				moves.push([rowCounter, colCounter]);
 			}
 			if (
 				piece.col + colCounter != 0 &&
 				model[piece.row + rowCounter][piece.col + colCounter - 1].color !==
-					"" &&
+				"" &&
 				model[piece.row + rowCounter][piece.col + colCounter - 1].color !==
-					piece.color
+				piece.color
 			) {
 				moves.push([rowCounter, colCounter - 1]);
 			}
@@ -472,16 +476,16 @@ function getAvailableMoves(piece) {
 			while (
 				rowCounter + piece.row > 0 &&
 				model[piece.row + rowCounter - 1][piece.col + colCounter].value === ""
-			) {
+				) {
 				rowCounter--;
 				moves.push([rowCounter, colCounter]);
 			}
 			if (
 				piece.row + rowCounter != 0 &&
 				model[piece.row + rowCounter - 1][piece.col + colCounter].color !==
-					"" &&
+				"" &&
 				model[piece.row + rowCounter - 1][piece.col + colCounter].color !==
-					piece.color
+				piece.color
 			) {
 				moves.push([rowCounter - 1, colCounter]);
 			}
@@ -490,16 +494,16 @@ function getAvailableMoves(piece) {
 			while (
 				colCounter + piece.col < 7 &&
 				model[piece.row + rowCounter][piece.col + colCounter + 1].value === ""
-			) {
+				) {
 				colCounter++;
 				moves.push([rowCounter, colCounter]);
 			}
 			if (
 				piece.col + colCounter != 7 &&
 				model[piece.row + rowCounter][piece.col + colCounter + 1].color !==
-					"" &&
+				"" &&
 				model[piece.row + rowCounter][piece.col + colCounter + 1].color !==
-					piece.color
+				piece.color
 			) {
 				moves.push([rowCounter, colCounter + 1]);
 			}
@@ -509,8 +513,8 @@ function getAvailableMoves(piece) {
 				rowCounter + piece.row < 7 &&
 				colCounter + piece.col < 7 &&
 				model[piece.row + rowCounter + 1][piece.col + colCounter + 1].value ===
-					""
-			) {
+				""
+				) {
 				rowCounter++;
 				colCounter++;
 				moves.push([rowCounter, colCounter]);
@@ -519,9 +523,9 @@ function getAvailableMoves(piece) {
 				piece.row + rowCounter != 7 &&
 				piece.col + colCounter != 7 &&
 				model[piece.row + rowCounter + 1][piece.col + colCounter + 1].color !==
-					"" &&
+				"" &&
 				model[piece.row + rowCounter + 1][piece.col + colCounter + 1].color !==
-					piece.color
+				piece.color
 			) {
 				moves.push([rowCounter + 1, colCounter + 1]);
 			}
@@ -531,8 +535,8 @@ function getAvailableMoves(piece) {
 				rowCounter + piece.row < 7 &&
 				colCounter + piece.col > 0 &&
 				model[piece.row + rowCounter + 1][piece.col + colCounter - 1].value ===
-					""
-			) {
+				""
+				) {
 				rowCounter++;
 				colCounter--;
 				moves.push([rowCounter, colCounter]);
@@ -541,9 +545,9 @@ function getAvailableMoves(piece) {
 				piece.row + rowCounter != 7 &&
 				piece.col + colCounter != 0 &&
 				model[piece.row + rowCounter + 1][piece.col + colCounter - 1].color !==
-					"" &&
+				"" &&
 				model[piece.row + rowCounter + 1][piece.col + colCounter - 1].color !==
-					piece.color
+				piece.color
 			) {
 				moves.push([rowCounter + 1, colCounter - 1]);
 			}
@@ -553,8 +557,8 @@ function getAvailableMoves(piece) {
 				rowCounter + piece.row > 0 &&
 				colCounter + piece.col > 0 &&
 				model[piece.row + rowCounter - 1][piece.col + colCounter - 1].value ===
-					""
-			) {
+				""
+				) {
 				rowCounter--;
 				colCounter--;
 				moves.push([rowCounter, colCounter]);
@@ -563,9 +567,9 @@ function getAvailableMoves(piece) {
 				piece.row + rowCounter != 0 &&
 				piece.col + colCounter != 0 &&
 				model[piece.row + rowCounter - 1][piece.col + colCounter - 1].color !==
-					"" &&
+				"" &&
 				model[piece.row + rowCounter - 1][piece.col + colCounter - 1].color !==
-					piece.color
+				piece.color
 			) {
 				moves.push([rowCounter - 1, colCounter - 1]);
 			}
@@ -575,8 +579,8 @@ function getAvailableMoves(piece) {
 				rowCounter + piece.row > 0 &&
 				colCounter + piece.col < 7 &&
 				model[piece.row + rowCounter - 1][piece.col + colCounter + 1].value ===
-					""
-			) {
+				""
+				) {
 				rowCounter--;
 				colCounter++;
 				moves.push([rowCounter, colCounter]);
@@ -585,9 +589,9 @@ function getAvailableMoves(piece) {
 				piece.row + rowCounter != 0 &&
 				piece.col + colCounter != 7 &&
 				model[piece.row + rowCounter - 1][piece.col + colCounter + 1].color !==
-					"" &&
+				"" &&
 				model[piece.row + rowCounter - 1][piece.col + colCounter + 1].color !==
-					piece.color
+				piece.color
 			) {
 				moves.push([rowCounter - 1, colCounter + 1]);
 			}
@@ -605,12 +609,12 @@ function getAvailableMoves(piece) {
 
 function movePieceInModel(piece, cell) {
 	const index = cell.getAttribute("data-index");
-	const modelCpy = model.map((element) => ({ ...element }));
+	const modelCpy = model.map((element) => ({...element}));
 	modelCpy[piece.row][piece.col] = new Piece();
 	piece.row = Math.floor(index / 8);
 	piece.col = index % 8;
 	modelCpy[piece.row][piece.col] = piece;
-	model = modelCpy.map((element) => ({ ...element }));
+	model = modelCpy.map((element) => ({...element}));
 	piece.moves++;
 }
 

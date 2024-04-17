@@ -43,5 +43,7 @@ body {
 
 }
 
-
-/*Styles for pop up window*/
+#center-button {
+	display: none;
+	justify-content: center;
+}
