@@ -7,6 +7,9 @@ window.addEventListener("load", init);
 // Currently chosen piece
 let chosenPiece;
 
+//White player starts
+let currentPlayer = "w";
+
 function init() {
 	// Initialize model
 	initModel();
@@ -24,6 +27,9 @@ function handleClicks(event) {
 		if (cell.classList.contains("highlight")) {
 			movePieceInModel(chosenPiece, cell);
 			showBoard();
+			if (checkCheck(chosenPiece)) {
+				checkMate();
+			}
 		}
 		// Otherwise we get the selected piece from the model, and highlight its available moves
 		else {
@@ -631,4 +637,60 @@ function movePieceInModel(piece, cell) {
 	piece.moves++;
 }
 
+function checkCheck(piece) {
+	const opponentKing = getKing(currentPlayer === "w" ? "b" : "w");
+	var moves = JSON.stringify(getAvailableMoves(piece));
+	var kingPosition = JSON.stringify([opponentKing.row, opponentKing.col]);
+	if (moves.indexOf(kingPosition) !== -1) {
+		console.log("Checked");
+		return true;
+	}
+	return false;
+}
+
+function checkMate() {
+	// Check all moves the enemy can make
+	for (let i = 0; i < 8; i++) {
+		for (let j = 0; j < 8; j++) {
+			const piece = model[i][j];
+			if (piece.color !== currentPlayer) {
+				const moves = getAvailableMoves(piece);
+				for (const move of moves) {
+					const targetPiece = model[move[0]][move[1]];
+					// Simulate the move
+					const originalPiece = model[piece.row][piece.col];
+					model[piece.row][piece.col] = new Piece();
+					model[move[0]][move[1]] = piece;
+					piece.row = move[0];
+					piece.col = move[1];
+					// Check if the move removes the check
+					if (!checkCheck(getKing(currentPlayer))) {
+						// Undo the move
+						model[piece.row][piece.col] = originalPiece;
+						model[move[0]][move[1]] = targetPiece;
+						piece.row = i;
+						piece.col = j;
+						return false;
+					}
+					// Undo the move
+					model[piece.row][piece.col] = originalPiece;
+					model[move[0]][move[1]] = targetPiece;
+					piece.row = i;
+					piece.col = j;
+				}
+			}
+		}
+	}
+	return true;
+}
+
+function getKing(color) {
+	for (let i = 0; i < 8; i++) {
+		for (let j = 0; j < 8; j++) {
+			if (model[i][j].value === "k" && model[i][j].color === color) {
+				return model[i][j];
+			}
+		}
+	}
+}
 //#endregion
