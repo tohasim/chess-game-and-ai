@@ -660,6 +660,11 @@ function movePieceInModel(piece, cell) {
 	const index = cell.getAttribute("data-index");
 	//Make a copy of the current model
 	const modelCpy = model.map((element) => ({ ...element }));
+
+	const targetPiece = model[Math.floor(index / 8)][index % 8];
+    if (targetPiece.value !== "") {
+        updateCapturedPieces(piece, targetPiece);
+    }
 	//Remove piece from it's current position
 	modelCpy[piece.row][piece.col] = new Piece();
 	//Update piece attributes
@@ -730,33 +735,23 @@ function getKing(color) {
 	}
 }
 
-
-
+//#region VIEW
+//#region VIEW
 function updateCapturedPieces(piece, targetPiece) {
-	if (targetPiece) {
-		const capturedPiecesContainer = document.getElementById(targetPiece.color === 'w' ? 'captured-white' : 'captured-black');
-		const capturedPiece = document.createElement("img");
-		capturedPiece.src = targetPiece.icon;
-		capturedPiece.alt = `${targetPiece.color}_${targetPiece.value}`;
-        capturedPiece.classList.add('captured-piece');		
+    if (targetPiece) {
+        const capturedPiecesContainer = document.getElementById(targetPiece.color === 'w' ? 'captured-white' : 'captured-black');
+        const capturedPiece = document.createElement("img");
+        capturedPiece.src = targetPiece.icon;
+        capturedPiece.alt = `${targetPiece.color}_${targetPiece.value}`;
+        capturedPiece.classList.add('captured-piece');
         capturedPiecesContainer.appendChild(capturedPiece);
-	}
-}
-
-function movePieceInModel(piece, cell) {
-    const index = cell.getAttribute("data-index");
-    const modelCpy = model.map((element) => ({ ...element }));
-    const targetPiece = model[Math.floor(index / 8)][index % 8];
-    if (targetPiece.value !== "") {
-        updateCapturedPieces(piece, targetPiece);
     }
-    modelCpy[piece.row][piece.col] = new Piece();
-    piece.row = Math.floor(index / 8);
-    piece.col = index % 8;
-    modelCpy[piece.row][piece.col] = piece;
-    model = modelCpy.map((element) => ({ ...element }));
-    piece.moves++;
 }
+//#endregion
+
+
+  
+
 
 //#endregion
 
