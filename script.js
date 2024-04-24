@@ -47,7 +47,7 @@ function handleClicks(event) {
 			moves.forEach((move) => highlightMove(move));
 		}
 	}
-	if (moveCounter === 100) {
+	if (moveCounter === 50) {
 		$("#exampleModalToggle").modal("show");
 		gameOver = true;
 		document.getElementById("center-button").style.display = "flex";
@@ -98,58 +98,47 @@ function highlightMove(move) {
 
 function showMoveCounter() {
 	let moveCounterElement = document.getElementById("moveCounter");
-	moveCounterElement.textContent = "Move nr. " + moveCounter / 2;
+	moveCounterElement.textContent = "Move nr. " + moveCounter;
+	if(moveCounter === 50) {
+		moveCounterElement.textContent = "Game over";
+	}
 }
 
 function showHowManyTimesEachPieceHasMoved() {
-	let whitePieceMovesHistory = document.getElementById("whitePiece");
-	let blackPieceMovesHistory = document.getElementById("blackPiece");
+    let whitePieceMovesHistory = document.getElementById("whitePiece");
+    let blackPieceMovesHistory = document.getElementById("blackPiece");
 
-	//WhitePiece Loop
-	for (let i = 0; i < whitePieces.length; i++) {
-		const piece = whitePieces[i];
-		console.log(whitePieces[i])
-		let pluralOrSingle = "times";
-		if (chosenPiece.moves === 1) {
-			pluralOrSingle = "time";
-		}
+    // WhitePiece Loop
+    for (let i = 0; i < whitePieces.length; i++) {
+        const piece = whitePieces[i];
+        console.log(whitePieces[i]);
+        let pluralOrSingle = piece.moves === 1 ? "time" : "times";
 
-		const pieceMoves =
-			"white " +
-			piece.value +
-			" has moved " +
-			piece.moves +
-			" " +
-			pluralOrSingle;
+        const pieceMoves =
+            `<span class="piece-icon"><img src="${piece.icon}" alt="${piece.value}"></span>` +
+            ` white ${piece.value} has moved ${piece.moves} ${pluralOrSingle}`;
 
-		let pieceMovesItem = document.createElement("li");
-		pieceMovesItem.textContent = pieceMoves;
-		whitePieceMovesHistory.appendChild(pieceMovesItem);
-	}
+        let pieceMovesItem = document.createElement("li");
+        pieceMovesItem.innerHTML = pieceMoves;
+        whitePieceMovesHistory.appendChild(pieceMovesItem);
+    }
 
-	//BlackPiece Loop
-	for (let i = 0; i < blackPieces.length; i++) {
-		const piece = blackPieces[i];
-		console.log(blackPieces[i])
-		let pluralOrSingle = "times";
-		if (chosenPiece.moves === 1) {
-			pluralOrSingle = "time";
-		}
+    // BlackPiece Loop
+    for (let i = 0; i < blackPieces.length; i++) {
+        const piece = blackPieces[i];
+        console.log(blackPieces[i]);
+        let pluralOrSingle = piece.moves === 1 ? "time" : "times";
 
-		const pieceMoves =
-			"black " +
-			piece.value +
-			" has moved " +
-			piece.moves +
-			" " +
-			pluralOrSingle;
+        const pieceMoves =
+            `<span class="piece-icon"><img src="${piece.icon}" alt="${piece.value}"></span>` +
+            ` black ${piece.value} has moved ${piece.moves} ${pluralOrSingle}`;
 
-		let pieceMovesItem = document.createElement("li");
-		pieceMovesItem.textContent = pieceMoves;
-		blackPieceMovesHistory.appendChild(pieceMovesItem);
-	}
-
+        let pieceMovesItem = document.createElement("li");
+        pieceMovesItem.innerHTML = pieceMoves;
+        blackPieceMovesHistory.appendChild(pieceMovesItem);
+    }
 }
+
 
 //#endregion
 
@@ -800,6 +789,10 @@ function movePieceInModel(piece, cell) {
     if (targetPiece.value !== "") {
         updateCapturedPieces(piece, targetPiece);
     }
+	// Check if piece value is 'p'
+	if (piece.value === 'p') {
+		moveCounter = -1;
+	}
 	//Remove piece from it's current position
 	modelCpy[piece.row][piece.col] = new Piece();
 	//Update piece attributes
@@ -812,6 +805,7 @@ function movePieceInModel(piece, cell) {
 	//Add a move to the piece
 	piece.moves++;
 	console.log(model);
+	
 }
 
 function checkCheck(piece) {
@@ -881,6 +875,7 @@ function updateCapturedPieces(piece, targetPiece) {
         capturedPiece.alt = `${targetPiece.color}_${targetPiece.value}`;
         capturedPiece.classList.add('captured-piece');
         capturedPiecesContainer.appendChild(capturedPiece);
+		moveCounter = -1;
     }
 }
 //#endregion

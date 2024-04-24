@@ -68,3 +68,9 @@ body {
 	background-size: cover;
 }
 
+
+img, svg {
+	height: 30px;
+	width: auto;
+}
+
