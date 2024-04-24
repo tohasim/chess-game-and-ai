@@ -197,13 +197,13 @@ function initModel() {
   row.push(whiteBishop1);
   whitePieces.push(whiteBishop1);
 
-  const whiteKing = new Piece("w", "k", 0, 3, "Chess_pieces/WhiteKing.png");
-  row.push(whiteKing);
-  whitePieces.push(whiteKing);
-
-  const whiteQueen = new Piece("w", "q", 0, 4, "Chess_pieces/WhiteQueen.png");
+  const whiteQueen = new Piece("w", "q", 0, 3, "Chess_pieces/WhiteQueen.png");
   row.push(whiteQueen);
   whitePieces.push(whiteQueen);
+  
+  const whiteKing = new Piece("w", "k", 0, 4, "Chess_pieces/WhiteKing.png");
+  row.push(whiteKing);
+  whitePieces.push(whiteKing);
 
   const whiteBishop2 = new Piece(
     "w",
@@ -336,15 +336,15 @@ function initModel() {
   );
   row.push(blackBishop1);
   blackPieces.push(blackBishop1);
-
-  const blackKing = new Piece("b", "k", 7, 3, "Chess_pieces/BlackKing.png");
-  row.push(blackKing);
-  blackPieces.push(blackKing);
-
-  const blackQueen = new Piece("b", "q", 7, 4, "Chess_pieces/BlackQueen.png");
+  
+  const blackQueen = new Piece("b", "q", 7, 3, "Chess_pieces/BlackQueen.png");
   row.push(blackQueen);
   blackPieces.push(blackQueen);
-
+  
+    const blackKing = new Piece("b", "k", 7, 4, "Chess_pieces/BlackKing.png");
+    row.push(blackKing);
+    blackPieces.push(blackKing);
+  
   const blackBishop2 = new Piece(
     "b",
     "b",
@@ -715,28 +715,26 @@ function getAvailableMoves(piece) {
           model[piece.row][0].moves === 0 &&
           model[piece.row][1].value === "" &&
           model[piece.row][2].value === "" &&
-		  model[piece.row][3].value === ""
+          model[piece.row][3].value === ""
         ) {
           moves.push([0, -2]);
-		  if(piece.color === "w"){
-			  castleMoves.push("Q")
-		  } else
-		  {
-			castleMoves.push("q")
-		  }
+          if (piece.color === "w") {
+            castleMoves.push("Q");
+          } else {
+            castleMoves.push("q");
+          }
         }
         if (
           model[piece.row][7].moves === 0 &&
           model[piece.row][6].value === "" &&
-          model[piece.row][5].value === "" 
+          model[piece.row][5].value === ""
         ) {
           moves.push([0, 2]);
-		  if(piece.color === "w"){
-			castleMoves.push("K")
-		} else
-		{
-		  castleMoves.push("k")
-		}
+          if (piece.color === "w") {
+            castleMoves.push("K");
+          } else {
+            castleMoves.push("k");
+          }
         }
       }
       console.log(castleMoves);
@@ -946,18 +944,27 @@ function movePieceInModel(piece, cell) {
       model[piece.row][piece.col].icon = "/Chess_pieces/WhiteQueen.png";
     }
   }
-  // castling move
-  if (piece.value === "k" && Math.abs(piece.col - (index % 8)) === 2) {
-    if (piece.col - (index % 8) === -2) {
-      model[piece.row][7].col = 5;
-      model[piece.row][5] = model[piece.row][7];
-      model[piece.row][7] = new Piece();
-    } else {
-      model[piece.row][0].col = 3;
-      model[piece.row][3] = model[piece.row][0];
-      model[piece.row][0] = new Piece();
-    }
+  // castling move. check castleMoves array for which rook to move
+  // the big and small letters does the same, but indicate different color. consider deleting later.
+  if (castleMoves.includes("q")) {
+    model[piece.row][3] = model[piece.row][0];
+    model[piece.row][0] = new Piece();
   }
+  if (castleMoves.includes("Q")) {
+    model[piece.row][3] = model[piece.row][0];
+    model[piece.row][0] = new Piece();
+  }
+  if (castleMoves.includes("k")) {
+    model[piece.row][5] = model[piece.row][7];
+    model[piece.row][7] = new Piece();
+  }
+  if (castleMoves.includes("K")) {
+    model[piece.row][5] = model[piece.row][7];
+    model[piece.row][7] = new Piece();
+  }
+  //en passant move
+
+ 
   console.log(model);
 }
 
