@@ -14,20 +14,26 @@ let gameOver = false;
 
 function init() {
 	// Initialize model
-	initModel();
+	setModelState();
 	// Render model to view
 	showBoard();
 	// Listen for clicks
 	board.addEventListener("click", (event) => handleClicks(event));
+	document.getElementById("game-state-button").addEventListener("click", () => {
+		const fen = document.getElementById("game-state-input").value;
+		setModelState(fen);
+		showBoard();
+	});
 }
-
 function handleClicks(event) {
 	// Get clicked element, and check whether it's a cell
 	const cell = event.target;
 	if (cell.classList.contains("cell") && gameOver === false) {
 		// If the clicked cell is highlighted we move there
 		if (cell.classList.contains("highlight")) {
-			movePieceInModel(chosenPiece, cell);
+			//Get index from cell
+			const index = cell.getAttribute("data-index");
+			movePieceInModel(chosenPiece, index);
 			showBoard();
 			moveCounter++;
 			showMoveCounter();
@@ -135,59 +141,37 @@ class Piece {
 
 let model = [];
 
-function initModel() {
-	// 1st row should be white officers
-	let row = [];
-	row.push(new Piece("w", "r", 0, 0, "Chess_pieces/WhiteRook.png"));
-	row.push(new Piece("w", "kn", 0, 1, "Chess_pieces/WhiteKnight.png"));
-	row.push(new Piece("w", "b", 0, 2, "Chess_pieces/WhiteBishop.png"));
-	row.push(new Piece("w", "k", 0, 3, "Chess_pieces/WhiteKing.png"));
-	row.push(new Piece("w", "q", 0, 4, "Chess_pieces/WhiteQueen.png"));
-	row.push(new Piece("w", "b", 0, 5, "Chess_pieces/WhiteBishop.png"));
-	row.push(new Piece("w", "kn", 0, 6, "Chess_pieces/WhiteKnight.png"));
-	row.push(new Piece("w", "r", 0, 7, "Chess_pieces/WhiteRook.png"));
-	model.push(row);
-	// Then the white pawns
-	row = [];
-	row.push(new Piece("w", "p", 1, 0, "Chess_pieces/WhitePawn.png"));
-	row.push(new Piece("w", "p", 1, 1, "Chess_pieces/WhitePawn.png"));
-	row.push(new Piece("w", "p", 1, 2, "Chess_pieces/WhitePawn.png"));
-	row.push(new Piece("w", "p", 1, 3, "Chess_pieces/WhitePawn.png"));
-	row.push(new Piece("w", "p", 1, 4, "Chess_pieces/WhitePawn.png"));
-	row.push(new Piece("w", "p", 1, 5, "Chess_pieces/WhitePawn.png"));
-	row.push(new Piece("w", "p", 1, 6, "Chess_pieces/WhitePawn.png"));
-	row.push(new Piece("w", "p", 1, 7, "Chess_pieces/WhitePawn.png"));
-	model.push(row);
-	// Then 4 empty rows
-	for (let i = 0; i < 4; i++) {
-		row = [];
-		for (let j = 0; j < 8; j++) {
-			row.push(new Piece());
+function setModelState(fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w") {
+	model = [];
+	const fenParts = fen.split(" ");
+	const piecePlacement = fenParts[0];
+	moveCounter =
+		fenParts.length === 6 && fenParts[5] === "-" ? 0 : parseInt(fenParts[5]);
+	const rows = piecePlacement.split("/");
+	currentPlayer = fenParts[1] === "w" ? "w" : "b";
+
+	for (let i = 7; i >= 0; i--) {
+		const row = [];
+		let j = 0;
+		for (const char of rows[i]) {
+			if (isNaN(char)) {
+				// if char is a piece
+				const color = char.toUpperCase() === char ? "w" : "b";
+				const pieceType = char.toLowerCase();
+				const imagePath = `Chess_pieces/${color.toUpperCase()}${pieceType.toUpperCase()}.png`;
+				row.push(new Piece(color, pieceType, 7 - i, j, imagePath));
+				j++;
+			} else {
+				for (let k = 0; k < parseInt(char); k++) {
+					row.push(new Piece());
+					j++;
+				}
+			}
 		}
 		model.push(row);
 	}
-	//Black pawns
-	row = [];
-	row.push(new Piece("b", "p", 6, 0, "Chess_pieces/BlackPawn.png"));
-	row.push(new Piece("b", "p", 6, 1, "Chess_pieces/BlackPawn.png"));
-	row.push(new Piece("b", "p", 6, 2, "Chess_pieces/BlackPawn.png"));
-	row.push(new Piece("b", "p", 6, 3, "Chess_pieces/BlackPawn.png"));
-	row.push(new Piece("b", "p", 6, 4, "Chess_pieces/BlackPawn.png"));
-	row.push(new Piece("b", "p", 6, 5, "Chess_pieces/BlackPawn.png"));
-	row.push(new Piece("b", "p", 6, 6, "Chess_pieces/BlackPawn.png"));
-	row.push(new Piece("b", "p", 6, 7, "Chess_pieces/BlackPawn.png"));
-	model.push(row);
-	// Black officers
-	row = [];
-	row.push(new Piece("b", "r", 7, 0, "Chess_pieces/BlackRook.png"));
-	row.push(new Piece("b", "kn", 7, 1, "Chess_pieces/BlackKnight.png"));
-	row.push(new Piece("b", "b", 7, 2, "Chess_pieces/BlackBishop.png"));
-	row.push(new Piece("b", "k", 7, 3, "Chess_pieces/BlackKing.png"));
-	row.push(new Piece("b", "q", 7, 4, "Chess_pieces/BlackQueen.png"));
-	row.push(new Piece("b", "b", 7, 5, "Chess_pieces/BlackBishop.png"));
-	row.push(new Piece("b", "kn", 7, 6, "Chess_pieces/BlackKnight.png"));
-	row.push(new Piece("b", "r", 7, 7, "Chess_pieces/BlackRook.png"));
-	model.push(row);
+
+	return model;
 }
 
 function getAvailableMoves(piece) {
@@ -202,6 +186,7 @@ function getAvailableMoves(piece) {
 					moves.push([-1, 0]);
 					// If the pawn haven't been moved, we add an extra move
 					if (
+						piece.row === 6 &&
 						piece.moves === 0 &&
 						model[piece.row - 2][piece.col].value === ""
 					) {
@@ -226,6 +211,7 @@ function getAvailableMoves(piece) {
 				if (model[piece.row + 1][piece.col].value === "") {
 					moves.push([1, 0]);
 					if (
+						piece.row === 1 &&
 						piece.moves === 0 &&
 						model[piece.row + 2][piece.col].value === ""
 					) {
@@ -655,9 +641,7 @@ function getAvailableMoves(piece) {
 	return moves;
 }
 
-function movePieceInModel(piece, cell) {
-	//Get index from cell
-	const index = cell.getAttribute("data-index");
+function movePieceInModel(piece, index) {
 	//Make a copy of the current model
 	const modelCpy = model.map((element) => ({ ...element }));
 	//Remove piece from it's current position
@@ -684,40 +668,59 @@ function checkCheck(piece) {
 	return false;
 }
 
+// Deep copy function for objects
+function deepCopy(obj) {
+	return JSON.parse(JSON.stringify(obj));
+}
+
 function checkMate() {
-	// Check all moves the enemy can make
-	for (let i = 0; i < 8; i++) {
-		for (let j = 0; j < 8; j++) {
-			const piece = model[i][j];
-			if (piece.color !== currentPlayer) {
-				const moves = getAvailableMoves(piece);
-				for (const move of moves) {
-					const targetPiece = model[move[0]][move[1]];
-					// Simulate the move
-					const originalPiece = model[piece.row][piece.col];
-					model[piece.row][piece.col] = new Piece();
-					model[move[0]][move[1]] = piece;
-					piece.row = move[0];
-					piece.col = move[1];
-					// Check if the move removes the check
-					if (!checkCheck(getKing(currentPlayer))) {
-						// Undo the move
-						model[piece.row][piece.col] = originalPiece;
-						model[move[0]][move[1]] = targetPiece;
-						piece.row = i;
-						piece.col = j;
-						return false;
-					}
-					// Undo the move
-					model[piece.row][piece.col] = originalPiece;
-					model[move[0]][move[1]] = targetPiece;
-					piece.row = i;
-					piece.col = j;
-				}
+	// Loop through each enemy piece
+	// If a piece have a move that removes the check, return false
+	// If no piece have a move that removes the check, return true
+	const pieces = getAllPiecesOfColor(currentPlayer === "w" ? "b" : "w");
+	for (let piece of pieces) {
+		const moves = getAvailableMoves(piece);
+		for (const move of moves) {
+			const pieceCpy = deepCopy(piece);
+			const modelCpy = deepCopy(model);
+			movePieceInModel(piece, move[0] * 8 + move[1]);
+			if (!checkIfKingIsChecked(currentPlayer === "w" ? "b" : "w")) {
+				model = modelCpy;
+				piece = pieceCpy;
+				return false;
+			}
+			model = modelCpy;
+			piece = pieceCpy;
+		}
+	}
+	console.log("Checkmate");
+	return true;
+}
+
+function checkIfKingIsChecked(color) {
+	const king = getKing(color);
+	const pieces = getAllPiecesOfColor(color === "w" ? "b" : "w");
+	for (const piece of pieces) {
+		const moves = getAvailableMoves(piece);
+		for (const move of moves) {
+			if (move[0] === king.row && move[1] === king.col) {
+				return true;
 			}
 		}
 	}
-	return true;
+	return false;
+}
+
+function getAllPiecesOfColor(color) {
+	const pieces = [];
+	for (let i = 0; i < 8; i++) {
+		for (let j = 0; j < 8; j++) {
+			if (model[i][j].color === color) {
+				pieces.push(model[i][j]);
+			}
+		}
+	}
+	return pieces;
 }
 
 function getKing(color) {
