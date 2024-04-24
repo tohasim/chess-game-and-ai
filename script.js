@@ -743,6 +743,11 @@ function movePieceInModel(piece, cell) {
 	// pawn promotion
 	if (piece.value === "p" && (piece.row === 0 || piece.row === 7)) {
 		model[piece.row][piece.col].value = "q";
+		if (piece.row === 0){
+			model[piece.row][piece.col].icon = "/Chess_pieces/BlackQueen.png"
+		}
+		else
+		{model[piece.row][piece.col].icon = "/Chess_pieces/WhiteQueen.png"}
 	}
 	// castling move
 	if (piece.value === "k" && Math.abs(piece.col - index % 8) === 2) {
