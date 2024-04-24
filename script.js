@@ -9,7 +9,7 @@ let chosenPiece;
 
 //White player starts
 let currentPlayer = "w";
-let moveCounter = 48;
+let moveCounter = 0;
 let gameOver = false;
 
 function init() {
