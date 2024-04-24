@@ -102,20 +102,53 @@ function showMoveCounter() {
 }
 
 function showHowManyTimesEachPieceHasMoved() {
-	let pieceMovesHistory = document.getElementById("piece");
-	let pluralOrSingle = "times";
-	if (chosenPiece.moves === 1) {
-		pluralOrSingle = "time";
+	let whitePieceMovesHistory = document.getElementById("whitePiece");
+	let blackPieceMovesHistory = document.getElementById("blackPiece");
+
+	//WhitePiece Loop
+	for (let i = 0; i < whitePieces.length; i++) {
+		const piece = whitePieces[i];
+		console.log(whitePieces[i])
+		let pluralOrSingle = "times";
+		if (chosenPiece.moves === 1) {
+			pluralOrSingle = "time";
+		}
+
+		const pieceMoves =
+			"white " +
+			piece.value +
+			" has moved " +
+			piece.moves +
+			" " +
+			pluralOrSingle;
+
+		let pieceMovesItem = document.createElement("li");
+		pieceMovesItem.textContent = pieceMoves;
+		whitePieceMovesHistory.appendChild(pieceMovesItem);
 	}
-	const pieceMoves =
-		chosenPiece.color +
-		" " +
-		chosenPiece.value +
-		" has moved " +
-		chosenPiece.moves +
-		" " +
-		pluralOrSingle;
-	pieceMovesHistory.textContent = pieceMoves;
+
+	//BlackPiece Loop
+	for (let i = 0; i < blackPieces.length; i++) {
+		const piece = blackPieces[i];
+		console.log(blackPieces[i])
+		let pluralOrSingle = "times";
+		if (chosenPiece.moves === 1) {
+			pluralOrSingle = "time";
+		}
+
+		const pieceMoves =
+			"black " +
+			piece.value +
+			" has moved " +
+			piece.moves +
+			" " +
+			pluralOrSingle;
+
+		let pieceMovesItem = document.createElement("li");
+		pieceMovesItem.textContent = pieceMoves;
+		blackPieceMovesHistory.appendChild(pieceMovesItem);
+	}
+
 }
 
 //#endregion
@@ -134,29 +167,81 @@ class Piece {
 }
 
 let model = [];
+const blackPieces = [];
+const whitePieces = [];
 
 function initModel() {
 	// 1st row should be white officers
-	let row = [];
-	row.push(new Piece("w", "r", 0, 0, "Chess_pieces/WhiteRook.png"));
-	row.push(new Piece("w", "kn", 0, 1, "Chess_pieces/WhiteKnight.png"));
-	row.push(new Piece("w", "b", 0, 2, "Chess_pieces/WhiteBishop.png"));
-	row.push(new Piece("w", "k", 0, 3, "Chess_pieces/WhiteKing.png"));
-	row.push(new Piece("w", "q", 0, 4, "Chess_pieces/WhiteQueen.png"));
-	row.push(new Piece("w", "b", 0, 5, "Chess_pieces/WhiteBishop.png"));
-	row.push(new Piece("w", "kn", 0, 6, "Chess_pieces/WhiteKnight.png"));
-	row.push(new Piece("w", "r", 0, 7, "Chess_pieces/WhiteRook.png"));
+	let row = []; 
+
+	const whiteRook1 = new Piece("w", "r", 0, 0, "Chess_pieces/WhiteRook.png");
+	row.push(whiteRook1);
+	whitePieces.push(whiteRook1);
+
+	const whiteKnight1 = new Piece("w", "kn", 0, 1, "Chess_pieces/WhiteKnight.png");
+	row.push(whiteKnight1);
+	whitePieces.push(whiteKnight1)
+
+	const whiteBishop1 = new Piece("w", "b", 0, 2, "Chess_pieces/WhiteBishop.png");
+	row.push(whiteBishop1);
+	whitePieces.push(whiteBishop1);
+
+	const whiteKing = new Piece("w", "k", 0, 3, "Chess_pieces/WhiteKing.png");
+	row.push(whiteKing);
+	whitePieces.push(whiteKing);
+
+	const whiteQueen = new Piece("w", "q", 0, 4, "Chess_pieces/WhiteQueen.png");
+	row.push(whiteQueen);
+	whitePieces.push(whiteQueen);
+
+	const whiteBishop2 = new Piece("w", "b", 0, 5, "Chess_pieces/WhiteBishop.png")
+	row.push(whiteBishop2);
+	whitePieces.push(whiteBishop2);
+
+	const whiteKnight2 = new Piece("w", "kn", 0, 6, "Chess_pieces/WhiteKnight.png");
+	row.push(whiteKnight2);
+	whitePieces.push(whiteKnight2);
+
+	const whiteRook2 = new Piece("w", "r", 0, 7, "Chess_pieces/WhiteRook.png");
+	row.push(whiteRook2);
+	whitePieces.push(whiteRook2);
+
 	model.push(row);
 	// Then the white pawns
 	row = [];
-	row.push(new Piece("w", "p", 1, 0, "Chess_pieces/WhitePawn.png"));
-	row.push(new Piece("w", "p", 1, 1, "Chess_pieces/WhitePawn.png"));
-	row.push(new Piece("w", "p", 1, 2, "Chess_pieces/WhitePawn.png"));
-	row.push(new Piece("w", "p", 1, 3, "Chess_pieces/WhitePawn.png"));
-	row.push(new Piece("w", "p", 1, 4, "Chess_pieces/WhitePawn.png"));
-	row.push(new Piece("w", "p", 1, 5, "Chess_pieces/WhitePawn.png"));
-	row.push(new Piece("w", "p", 1, 6, "Chess_pieces/WhitePawn.png"));
-	row.push(new Piece("w", "p", 1, 7, "Chess_pieces/WhitePawn.png"));
+
+	const whitePawn1 = new Piece("w", "p", 1, 0, "Chess_pieces/WhitePawn.png");
+	row.push(whitePawn1);
+	whitePieces.push(whitePawn1);
+
+	const whitePawn2 = new Piece("w", "p", 1, 1, "Chess_pieces/WhitePawn.png");
+	row.push(whitePawn2);
+	whitePieces.push(whitePawn2);
+
+	const whitePawn3 = new Piece("w", "p", 1, 2, "Chess_pieces/WhitePawn.png");
+	row.push(whitePawn3);
+	whitePieces.push(whitePawn3);
+
+	const whitePawn4 = new Piece("w", "p", 1, 3, "Chess_pieces/WhitePawn.png");
+	row.push(whitePawn4);
+	whitePieces.push(whitePawn4);
+
+	const whitePawn5 = new Piece("w", "p", 1, 4, "Chess_pieces/WhitePawn.png");
+	row.push(whitePawn5);
+	whitePieces.push(whitePawn5);
+
+	const whitePawn6 = new Piece("w", "p", 1, 5, "Chess_pieces/WhitePawn.png");
+	row.push(whitePawn6);
+	whitePieces.push(whitePawn6);
+
+	const whitePawn7 = new Piece("w", "p", 1, 6, "Chess_pieces/WhitePawn.png");
+	row.push(whitePawn7);
+	whitePieces.push(whitePawn7);
+
+	const whitePawn8 = new Piece("w", "p", 1, 7, "Chess_pieces/WhitePawn.png");
+	row.push(whitePawn8);
+	whitePieces.push(whitePawn8);
+	
 	model.push(row);
 	// Then 4 empty rows
 	for (let i = 0; i < 4; i++) {
@@ -168,25 +253,75 @@ function initModel() {
 	}
 	//Black pawns
 	row = [];
-	row.push(new Piece("b", "p", 6, 0, "Chess_pieces/BlackPawn.png"));
-	row.push(new Piece("b", "p", 6, 1, "Chess_pieces/BlackPawn.png"));
-	row.push(new Piece("b", "p", 6, 2, "Chess_pieces/BlackPawn.png"));
-	row.push(new Piece("b", "p", 6, 3, "Chess_pieces/BlackPawn.png"));
-	row.push(new Piece("b", "p", 6, 4, "Chess_pieces/BlackPawn.png"));
-	row.push(new Piece("b", "p", 6, 5, "Chess_pieces/BlackPawn.png"));
-	row.push(new Piece("b", "p", 6, 6, "Chess_pieces/BlackPawn.png"));
-	row.push(new Piece("b", "p", 6, 7, "Chess_pieces/BlackPawn.png"));
+
+	const blackPawn1 = new Piece("b", "p", 6, 0, "Chess_pieces/BlackPawn.png");
+	row.push(blackPawn1);
+	blackPieces.push(blackPawn1);
+	
+	const blackPawn2 = new Piece("b", "p", 6, 1, "Chess_pieces/BlackPawn.png");
+	row.push(blackPawn2);
+	blackPieces.push(blackPawn2);
+	
+	const blackPawn3 = new Piece("b", "p", 6, 2, "Chess_pieces/BlackPawn.png");
+	row.push(blackPawn3);
+	blackPieces.push(blackPawn3);
+	
+	const blackPawn4 = new Piece("b", "p", 6, 3, "Chess_pieces/BlackPawn.png");
+	row.push(blackPawn4);
+	blackPieces.push(blackPawn4);
+	
+	const blackPawn5 = new Piece("b", "p", 6, 4, "Chess_pieces/BlackPawn.png");
+	row.push(blackPawn5);
+	blackPieces.push(blackPawn5);
+	
+	const blackPawn6 = new Piece("b", "p", 6, 5, "Chess_pieces/BlackPawn.png");
+	row.push(blackPawn6);
+	blackPieces.push(blackPawn6);
+	
+	const blackPawn7 = new Piece("b", "p", 6, 6, "Chess_pieces/BlackPawn.png");
+	row.push(blackPawn7);
+	blackPieces.push(blackPawn7);
+	
+	const blackPawn8 = new Piece("b", "p", 6, 7, "Chess_pieces/BlackPawn.png");
+	row.push(blackPawn8);
+	blackPieces.push(blackPawn8);
+	
 	model.push(row);
 	// Black officers
 	row = [];
-	row.push(new Piece("b", "r", 7, 0, "Chess_pieces/BlackRook.png"));
-	row.push(new Piece("b", "kn", 7, 1, "Chess_pieces/BlackKnight.png"));
-	row.push(new Piece("b", "b", 7, 2, "Chess_pieces/BlackBishop.png"));
-	row.push(new Piece("b", "k", 7, 3, "Chess_pieces/BlackKing.png"));
-	row.push(new Piece("b", "q", 7, 4, "Chess_pieces/BlackQueen.png"));
-	row.push(new Piece("b", "b", 7, 5, "Chess_pieces/BlackBishop.png"));
-	row.push(new Piece("b", "kn", 7, 6, "Chess_pieces/BlackKnight.png"));
-	row.push(new Piece("b", "r", 7, 7, "Chess_pieces/BlackRook.png"));
+
+	const blackRook1 = new Piece("b", "r", 7, 0, "Chess_pieces/BlackRook.png");
+	row.push(blackRook1);
+	blackPieces.push(blackRook1);
+
+	const blackKnight1 = new Piece("b", "kn", 7, 1, "Chess_pieces/BlackKnight.png");
+	row.push(blackKnight1);
+	blackPieces.push(blackKnight1);
+
+	const blackBishop1 = new Piece("b", "b", 7, 2, "Chess_pieces/BlackBishop.png");
+	row.push(blackBishop1);
+	blackPieces.push(blackBishop1);
+
+	const blackKing = new Piece("b", "k", 7, 3, "Chess_pieces/BlackKing.png");
+	row.push(blackKing);
+	blackPieces.push(blackKing);
+
+	const blackQueen = new Piece("b", "q", 7, 4, "Chess_pieces/BlackQueen.png");
+	row.push(blackQueen);
+	blackPieces.push(blackQueen);
+
+	const blackBishop2 = new Piece("b", "b", 7, 5, "Chess_pieces/BlackBishop.png");
+	row.push(blackBishop2);
+	blackPieces.push(blackBishop2);
+
+	const blackKnight2 = new Piece("b", "kn", 7, 6, "Chess_pieces/BlackKnight.png");
+	row.push(blackKnight2);
+	blackPieces.push(blackKnight2);
+
+	const blackRook2 = new Piece("b", "r", 7, 7, "Chess_pieces/BlackRook.png");
+	row.push(blackRook2);
+	blackPieces.push(blackRook2);
+
 	model.push(row);
 }
 
@@ -676,6 +811,7 @@ function movePieceInModel(piece, cell) {
 	model = modelCpy.map((element) => ({ ...element }));
 	//Add a move to the piece
 	piece.moves++;
+	console.log(model);
 }
 
 function checkCheck(piece) {
