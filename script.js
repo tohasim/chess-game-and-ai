@@ -11,6 +11,8 @@ let chosenPiece;
 let currentPlayer = "w";
 let moveCounter = 0;
 let gameOver = false;
+let hasPawnMoved = false;
+let hasPieceBeenCaptured = false;
 
 function init() {
   // Initialize model
@@ -97,58 +99,48 @@ function highlightMove(move) {
 }
 
 function showMoveCounter() {
-  let moveCounterElement = document.getElementById("moveCounter");
-  moveCounterElement.textContent = "Move nr. " + moveCounter / 2;
+	let moveCounterElement = document.getElementById("moveCounter");
+	moveCounterElement.textContent = "Move nr. " + Math.floor(moveCounter / 2);
+	if(moveCounter === 100) {
+		moveCounterElement.textContent = "Game over";
+	}
 }
 
 function showHowManyTimesEachPieceHasMoved() {
-  let whitePieceMovesHistory = document.getElementById("whitePiece");
-  let blackPieceMovesHistory = document.getElementById("blackPiece");
+    let whitePieceMovesHistory = document.getElementById("whitePiece");
+    let blackPieceMovesHistory = document.getElementById("blackPiece");
 
-  //WhitePiece Loop
-  for (let i = 0; i < whitePieces.length; i++) {
-    const piece = whitePieces[i];
-    console.log(whitePieces[i]);
-    let pluralOrSingle = "times";
-    if (chosenPiece.moves === 1) {
-      pluralOrSingle = "time";
+    // WhitePiece Loop
+    for (let i = 0; i < whitePieces.length; i++) {
+        const piece = whitePieces[i];
+        console.log(whitePieces[i]);
+        let pluralOrSingle = piece.moves === 1 ? "time" : "times";
+
+        const pieceMoves =
+            `<span class="piece-icon"><img src="${piece.icon}" alt="${piece.value}"></span>` +
+            ` white ${piece.value} has moved ${piece.moves} ${pluralOrSingle}`;
+
+        let pieceMovesItem = document.createElement("li");
+        pieceMovesItem.innerHTML = pieceMoves;
+        whitePieceMovesHistory.appendChild(pieceMovesItem);
     }
 
-    const pieceMoves =
-      "white " +
-      piece.value +
-      " has moved " +
-      piece.moves +
-      " " +
-      pluralOrSingle;
+    // BlackPiece Loop
+    for (let i = 0; i < blackPieces.length; i++) {
+        const piece = blackPieces[i];
+        console.log(blackPieces[i]);
+        let pluralOrSingle = piece.moves === 1 ? "time" : "times";
 
-    let pieceMovesItem = document.createElement("li");
-    pieceMovesItem.textContent = pieceMoves;
-    whitePieceMovesHistory.appendChild(pieceMovesItem);
-  }
+        const pieceMoves =
+            `<span class="piece-icon"><img src="${piece.icon}" alt="${piece.value}"></span>` +
+            ` black ${piece.value} has moved ${piece.moves} ${pluralOrSingle}`;
 
-  //BlackPiece Loop
-  for (let i = 0; i < blackPieces.length; i++) {
-    const piece = blackPieces[i];
-    console.log(blackPieces[i]);
-    let pluralOrSingle = "times";
-    if (chosenPiece.moves === 1) {
-      pluralOrSingle = "time";
+        let pieceMovesItem = document.createElement("li");
+        pieceMovesItem.innerHTML = pieceMoves;
+        blackPieceMovesHistory.appendChild(pieceMovesItem);
     }
-
-    const pieceMoves =
-      "black " +
-      piece.value +
-      " has moved " +
-      piece.moves +
-      " " +
-      pluralOrSingle;
-
-    let pieceMovesItem = document.createElement("li");
-    pieceMovesItem.textContent = pieceMoves;
-    blackPieceMovesHistory.appendChild(pieceMovesItem);
-  }
 }
+
 
 //#endregion
 
@@ -719,9 +711,9 @@ function getAvailableMoves(piece) {
         ) {
           moves.push([0, -2]);
           if (piece.color === "w") {
-            castleMoves.push("Q");
+            castleMoves.push("wQ");
           } else {
-            castleMoves.push("q");
+            castleMoves.push("bq");
           }
         }
         if (
@@ -731,9 +723,9 @@ function getAvailableMoves(piece) {
         ) {
           moves.push([0, 2]);
           if (piece.color === "w") {
-            castleMoves.push("K");
+            castleMoves.push("wK");
           } else {
-            castleMoves.push("k");
+            castleMoves.push("bk");
           }
         }
       }
@@ -946,19 +938,20 @@ function movePieceInModel(piece, cell) {
   }
   // castling move. check castleMoves array for which rook to move
   // the big and small letters does the same, but indicate different color. consider deleting later.
-  if (castleMoves.includes("q")) {
+  console.log(castleMoves, 'castleMoves')
+  if (castleMoves.includes("bq")) {
     model[piece.row][3] = model[piece.row][0];
     model[piece.row][0] = new Piece();
   }
-  if (castleMoves.includes("Q")) {
+  if (castleMoves.includes("wQ")) {
     model[piece.row][3] = model[piece.row][0];
     model[piece.row][0] = new Piece();
   }
-  if (castleMoves.includes("k")) {
+  if (castleMoves.includes("bk")) {
     model[piece.row][5] = model[piece.row][7];
     model[piece.row][7] = new Piece();
   }
-  if (castleMoves.includes("K")) {
+  if (castleMoves.includes("wK")) {
     model[piece.row][5] = model[piece.row][7];
     model[piece.row][7] = new Piece();
   }
@@ -1025,6 +1018,22 @@ function getKing(color) {
   }
 }
 
+function checkIfMoveCounterCriteriaHasBeenFulFilled() {
+	if (hasPawnMoved === true && hasPieceBeenCaptured === true) {
+		moveCounter = - 1;
+		hasPawnMoved = false;
+		hasPieceBeenCaptured = false;
+	}
+}
+
+function checkIfMoveCounterCriteriaHasBeenFulFilled() {
+	if (hasPawnMoved === true && hasPieceBeenCaptured === true) {
+		moveCounter = - 1;
+		hasPawnMoved = false;
+		hasPieceBeenCaptured = false;
+	}
+}
+
 //#region VIEW
 //#region VIEW
 function updateCapturedPieces(piece, targetPiece) {
@@ -1037,6 +1046,7 @@ function updateCapturedPieces(piece, targetPiece) {
     capturedPiece.alt = `${targetPiece.color}_${targetPiece.value}`;
     capturedPiece.classList.add("captured-piece");
     capturedPiecesContainer.appendChild(capturedPiece);
+		hasPieceBeenCaptured = true;
   }
 }
 //#endregion
