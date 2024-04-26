@@ -11,6 +11,8 @@ let chosenPiece;
 let currentPlayer = "w";
 let moveCounter = 0;
 let gameOver = false;
+let hasPawnMoved = false;
+let hasPieceBeenCaptured = false;
 
 function init() {
 	// Initialize model
@@ -47,7 +49,7 @@ function handleClicks(event) {
 			moves.forEach((move) => highlightMove(move));
 		}
 	}
-	if (moveCounter === 50) {
+	if (moveCounter === 100) {
 		$("#exampleModalToggle").modal("show");
 		gameOver = true;
 		document.getElementById("center-button").style.display = "flex";
@@ -98,8 +100,8 @@ function highlightMove(move) {
 
 function showMoveCounter() {
 	let moveCounterElement = document.getElementById("moveCounter");
-	moveCounterElement.textContent = "Move nr. " + moveCounter;
-	if(moveCounter === 50) {
+	moveCounterElement.textContent = "Move nr. " + Math.floor(moveCounter / 2);
+	if(moveCounter === 100) {
 		moveCounterElement.textContent = "Game over";
 	}
 }
@@ -791,7 +793,7 @@ function movePieceInModel(piece, cell) {
     }
 	// Check if piece value is 'p'
 	if (piece.value === 'p') {
-		moveCounter = -1;
+		hasPawnMoved = true;
 	}
 	//Remove piece from it's current position
 	modelCpy[piece.row][piece.col] = new Piece();
@@ -806,6 +808,7 @@ function movePieceInModel(piece, cell) {
 	piece.moves++;
 	console.log(model);
 	
+	checkIfMoveCounterCriteriaHasBeenFulFilled();
 }
 
 function checkCheck(piece) {
@@ -865,6 +868,14 @@ function getKing(color) {
 	}
 }
 
+function checkIfMoveCounterCriteriaHasBeenFulFilled() {
+	if (hasPawnMoved === true && hasPieceBeenCaptured === true) {
+		moveCounter = - 1;
+		hasPawnMoved = false;
+		hasPieceBeenCaptured = false;
+	}
+}
+
 //#region VIEW
 //#region VIEW
 function updateCapturedPieces(piece, targetPiece) {
@@ -875,7 +886,7 @@ function updateCapturedPieces(piece, targetPiece) {
         capturedPiece.alt = `${targetPiece.color}_${targetPiece.value}`;
         capturedPiece.classList.add('captured-piece');
         capturedPiecesContainer.appendChild(capturedPiece);
-		moveCounter = -1;
+		hasPieceBeenCaptured = true;
     }
 }
 //#endregion
