@@ -171,7 +171,7 @@ function setModelState(fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w") {
 	const fenParts = fen.split(" ");
 	const piecePlacement = fenParts[0];
 	moveCounter =
-		fenParts.length === 6 && fenParts[5] === "-" ? 0 : parseInt(fenParts[5]);
+		fenParts.length === 6 && fenParts[5] !== "-" ? parseInt(fenParts[5]) : 0;
 	const rows = piecePlacement.split("/");
 	currentPlayer = fenParts[1] === "w" ? "w" : "b";
 
