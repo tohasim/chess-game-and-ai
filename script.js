@@ -96,6 +96,20 @@ function showBoard() {
 	}
 }
 
+function updateCapturedPieces(piece, targetPiece) {
+	if (targetPiece) {
+		const capturedPiecesContainer = document.getElementById(
+			targetPiece.color === "w" ? "captured-white" : "captured-black"
+		);
+		const capturedPiece = document.createElement("img");
+		capturedPiece.src = targetPiece.icon;
+		capturedPiece.alt = `${targetPiece.color}_${targetPiece.value}`;
+		capturedPiece.classList.add("captured-piece");
+		capturedPiecesContainer.appendChild(capturedPiece);
+		hasPieceBeenCaptured = true;
+	}
+}
+
 function highlightMove(move) {
 	// Calculate which index we want to highlight, necessary since the board is upside down compared to the model
 	const index = 63 - (7 - move[1]) - move[0] * 8;
@@ -886,22 +900,4 @@ function checkIfMoveCounterCriteriaHasBeenFulFilled() {
 		hasPieceBeenCaptured = false;
 	}
 }
-
-//#region VIEW
-//#region VIEW
-function updateCapturedPieces(piece, targetPiece) {
-	if (targetPiece) {
-		const capturedPiecesContainer = document.getElementById(
-			targetPiece.color === "w" ? "captured-white" : "captured-black"
-		);
-		const capturedPiece = document.createElement("img");
-		capturedPiece.src = targetPiece.icon;
-		capturedPiece.alt = `${targetPiece.color}_${targetPiece.value}`;
-		capturedPiece.classList.add("captured-piece");
-		capturedPiecesContainer.appendChild(capturedPiece);
-		hasPieceBeenCaptured = true;
-	}
-}
-//#endregion
-
 //#endregion
