@@ -766,9 +766,9 @@ function movePieceInModel(piece, index) {
 	if (piece.value === "p" && (piece.row === 0 || piece.row === 7)) {
 		model[piece.row][piece.col].value = "q";
 		if (piece.row === 0) {
-			model[piece.row][piece.col].icon = "/Chess_pieces/BlackQueen.png";
+			model[piece.row][piece.col].icon = "/Chess_pieces/BQ.png";
 		} else {
-			model[piece.row][piece.col].icon = "/Chess_pieces/WhiteQueen.png";
+			model[piece.row][piece.col].icon = "/Chess_pieces/WQ.png";
 		}
 	}
 	// castling move. check castleMoves array for which rook to move
