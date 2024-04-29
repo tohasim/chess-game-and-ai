@@ -50,3 +50,9 @@ body {
 	display: none;
 	justify-content: center;
 }
+img, svg {
+	height: 60px;
+	width: auto;
+}
+
+

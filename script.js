@@ -11,6 +11,8 @@ let chosenPiece;
 let currentPlayer = "w";
 let moveCounter = 0;
 let gameOver = false;
+let hasPawnMoved = false;
+let hasPieceBeenCaptured = false;
 
 function init() {
 	// Initialize model
@@ -104,24 +106,45 @@ function highlightMove(move) {
 
 function showMoveCounter() {
 	let moveCounterElement = document.getElementById("moveCounter");
-	moveCounterElement.textContent = "Move nr. " + moveCounter / 2;
+	moveCounterElement.textContent = "Move nr. " + Math.floor(moveCounter / 2);
+	if (moveCounter === 100) {
+		moveCounterElement.textContent = "Game over";
+	}
 }
 
 function showHowManyTimesEachPieceHasMoved() {
-	let pieceMovesHistory = document.getElementById("piece");
-	let pluralOrSingle = "times";
-	if (chosenPiece.moves === 1) {
-		pluralOrSingle = "time";
+	let whitePieceMovesHistory = document.getElementById("whitePiece");
+	let blackPieceMovesHistory = document.getElementById("blackPiece");
+
+	// WhitePiece Loop
+	for (let i = 0; i < whitePieces.length; i++) {
+		const piece = whitePieces[i];
+		console.log(whitePieces[i]);
+		let pluralOrSingle = piece.moves === 1 ? "time" : "times";
+
+		const pieceMoves =
+			`<span class="piece-icon"><img src="${piece.icon}" alt="${piece.value}"></span>` +
+			` white ${piece.value} has moved ${piece.moves} ${pluralOrSingle}`;
+
+		let pieceMovesItem = document.createElement("li");
+		pieceMovesItem.innerHTML = pieceMoves;
+		whitePieceMovesHistory.appendChild(pieceMovesItem);
 	}
-	const pieceMoves =
-		chosenPiece.color +
-		" " +
-		chosenPiece.value +
-		" has moved " +
-		chosenPiece.moves +
-		" " +
-		pluralOrSingle;
-	pieceMovesHistory.textContent = pieceMoves;
+
+	// BlackPiece Loop
+	for (let i = 0; i < blackPieces.length; i++) {
+		const piece = blackPieces[i];
+		console.log(blackPieces[i]);
+		let pluralOrSingle = piece.moves === 1 ? "time" : "times";
+
+		const pieceMoves =
+			`<span class="piece-icon"><img src="${piece.icon}" alt="${piece.value}"></span>` +
+			` black ${piece.value} has moved ${piece.moves} ${pluralOrSingle}`;
+
+		let pieceMovesItem = document.createElement("li");
+		pieceMovesItem.innerHTML = pieceMoves;
+		blackPieceMovesHistory.appendChild(pieceMovesItem);
+	}
 }
 
 //#endregion
@@ -140,6 +163,8 @@ class Piece {
 }
 
 let model = [];
+const blackPieces = [];
+const whitePieces = [];
 
 function setModelState(fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w") {
 	model = [];
@@ -174,6 +199,7 @@ function setModelState(fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w") {
 	return model;
 }
 
+let castleMoves = [];
 function getAvailableMoves(piece) {
 	let moves = [];
 	//Find out which piece we want to move
@@ -206,6 +232,30 @@ function getAvailableMoves(piece) {
 				) {
 					moves.push([-1, 1]);
 				}
+				//En passant move
+				if (
+					piece.row === 3 &&
+					model[piece.row][piece.col - 1].value === "p" &&
+					model[piece.row][piece.col - 1].color === "w" &&
+					model[piece.row][piece.col - 1].moves === 1
+				) {
+					moves.push([-1, -1]);
+				}
+				if (
+					piece.row === 3 &&
+					model[piece.row][piece.col + 1].value === "p" &&
+					model[piece.row][piece.col + 1].color === "w" &&
+					model[piece.row][piece.col + 1].moves === 1
+				) {
+					moves.push([-1, 1]);
+				}
+				// pawn promotion
+				if (piece.row === 1) {
+					moves = moves.map((move) => {
+						move.push("q");
+						return move;
+					});
+				}
 			} else {
 				//Same as above, but for white pawns
 				if (model[piece.row + 1][piece.col].value === "") {
@@ -229,6 +279,30 @@ function getAvailableMoves(piece) {
 					model[piece.row + 1][piece.col + 1].color === "b"
 				) {
 					moves.push([1, 1]);
+				}
+				//En passant move
+				if (
+					piece.row === 4 &&
+					model[piece.row][piece.col - 1].value === "p" &&
+					model[piece.row][piece.col - 1].color === "b" &&
+					model[piece.row][piece.col - 1].moves === 1
+				) {
+					moves.push([1, -1]);
+				}
+				if (
+					piece.row === 4 &&
+					model[piece.row][piece.col + 1].value === "p" &&
+					model[piece.row][piece.col + 1].color === "b" &&
+					model[piece.row][piece.col + 1].moves === 1
+				) {
+					moves.push([1, 1]);
+				}
+				// pawn promotion
+				if (piece.row === 6) {
+					moves = moves.map((move) => {
+						move.push("q");
+						return move;
+					});
 				}
 			}
 			break;
@@ -311,7 +385,7 @@ function getAvailableMoves(piece) {
 			}
 			break;
 		}
-		case "kn": {
+		case "n": {
 			// All available knight moves
 			const offsets = [
 				[-2, -1],
@@ -464,7 +538,35 @@ function getAvailableMoves(piece) {
 					moves.push([offset[0], offset[1]]);
 				}
 			});
-
+			// castling move check rook as well
+			if (piece.moves === 0) {
+				if (
+					model[piece.row][0].moves === 0 &&
+					model[piece.row][1].value === "" &&
+					model[piece.row][2].value === "" &&
+					model[piece.row][3].value === ""
+				) {
+					moves.push([0, -2]);
+					if (piece.color === "w") {
+						castleMoves.push("wQ");
+					} else {
+						castleMoves.push("bq");
+					}
+				}
+				if (
+					model[piece.row][7].moves === 0 &&
+					model[piece.row][6].value === "" &&
+					model[piece.row][5].value === ""
+				) {
+					moves.push([0, 2]);
+					if (piece.color === "w") {
+						castleMoves.push("wK");
+					} else {
+						castleMoves.push("bk");
+					}
+				}
+			}
+			console.log(castleMoves);
 			break;
 		}
 		case "q": {
@@ -644,6 +746,11 @@ function getAvailableMoves(piece) {
 function movePieceInModel(piece, index) {
 	//Make a copy of the current model
 	const modelCpy = model.map((element) => ({ ...element }));
+
+	const targetPiece = model[Math.floor(index / 8)][index % 8];
+	if (targetPiece.value !== "") {
+		updateCapturedPieces(piece, targetPiece);
+	}
 	//Remove piece from it's current position
 	modelCpy[piece.row][piece.col] = new Piece();
 	//Update piece attributes
@@ -655,6 +762,37 @@ function movePieceInModel(piece, index) {
 	model = modelCpy.map((element) => ({ ...element }));
 	//Add a move to the piece
 	piece.moves++;
+	// pawn promotion
+	if (piece.value === "p" && (piece.row === 0 || piece.row === 7)) {
+		model[piece.row][piece.col].value = "q";
+		if (piece.row === 0) {
+			model[piece.row][piece.col].icon = "/Chess_pieces/BlackQueen.png";
+		} else {
+			model[piece.row][piece.col].icon = "/Chess_pieces/WhiteQueen.png";
+		}
+	}
+	// castling move. check castleMoves array for which rook to move
+	// the big and small letters does the same, but indicate different color. consider deleting later.
+	console.log(castleMoves, "castleMoves");
+	if (castleMoves.includes("bq")) {
+		model[piece.row][3] = model[piece.row][0];
+		model[piece.row][0] = new Piece();
+	}
+	if (castleMoves.includes("wQ")) {
+		model[piece.row][3] = model[piece.row][0];
+		model[piece.row][0] = new Piece();
+	}
+	if (castleMoves.includes("bk")) {
+		model[piece.row][5] = model[piece.row][7];
+		model[piece.row][7] = new Piece();
+	}
+	if (castleMoves.includes("wK")) {
+		model[piece.row][5] = model[piece.row][7];
+		model[piece.row][7] = new Piece();
+	}
+	//en passant move
+
+	console.log(model);
 }
 
 function checkCheck(piece) {
@@ -732,4 +870,38 @@ function getKing(color) {
 		}
 	}
 }
+
+function checkIfMoveCounterCriteriaHasBeenFulFilled() {
+	if (hasPawnMoved === true && hasPieceBeenCaptured === true) {
+		moveCounter = -1;
+		hasPawnMoved = false;
+		hasPieceBeenCaptured = false;
+	}
+}
+
+function checkIfMoveCounterCriteriaHasBeenFulFilled() {
+	if (hasPawnMoved === true && hasPieceBeenCaptured === true) {
+		moveCounter = -1;
+		hasPawnMoved = false;
+		hasPieceBeenCaptured = false;
+	}
+}
+
+//#region VIEW
+//#region VIEW
+function updateCapturedPieces(piece, targetPiece) {
+	if (targetPiece) {
+		const capturedPiecesContainer = document.getElementById(
+			targetPiece.color === "w" ? "captured-white" : "captured-black"
+		);
+		const capturedPiece = document.createElement("img");
+		capturedPiece.src = targetPiece.icon;
+		capturedPiece.alt = `${targetPiece.color}_${targetPiece.value}`;
+		capturedPiece.classList.add("captured-piece");
+		capturedPiecesContainer.appendChild(capturedPiece);
+		hasPieceBeenCaptured = true;
+	}
+}
+//#endregion
+
 //#endregion
