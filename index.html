@@ -11,8 +11,13 @@
 			crossorigin="anonymous"
 		/>
 		<link rel="stylesheet" href="style.css" />
+		<link rel="icon" type="image/x-icon" href="Chess_pieces/WN.png"/>
 	</head>
 	<body>
+		<div class="playerTurnWrapper">
+			<a>It's <span id="playerTurn" style="font-weight: bold; color: white; text-shadow: 2px 2px 4px #000000;">White</span>'s Turn</a>
+		</div>
+
 		<div id="board"></div>
 		<div id="game-state">
 			<label for="game-state-input">Go to state: </label>

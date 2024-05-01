@@ -55,4 +55,31 @@ img, svg {
 	width: auto;
 }
 
+.playerTurnWrapper {
+	display: flex;
+	justify-content: center;
+}
 
+.playerTurnWrapper a {
+	font-size: 25px;
+}
+
+#playerTurn {
+	font-weight: bold; 
+	color: white; 
+	text-shadow: 2px 2px 4px #000000
+}
+
+#notAllowedMessage {
+    position: fixed;
+    top: 30%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2em;
+    color: red;
+    z-index: 9999;
+    opacity: 1;
+    transition: opacity 0.5s ease-in-out;
+	font-weight: bold;
+	font-size: 100px;
+}
