@@ -140,6 +140,15 @@ function showMoveCounter() {
 	}
 }
 
+const CHESS_PIECE_NAMES = {
+    "r": "Rook",
+    "n": "Knight",
+	"p": "Pawn",
+	"k": "King",
+	"q": "Queen",
+	"b": "Bishop"
+} 
+
 function showHowManyTimesEachPieceHasMoved() {
 	let whitePieceMovesHistory = document.getElementById("whitePiece");
 	let blackPieceMovesHistory = document.getElementById("blackPiece");
@@ -152,7 +161,7 @@ function showHowManyTimesEachPieceHasMoved() {
 
 		const pieceMoves =
 			`<span class="piece-icon"><img src="${piece.icon}" alt="${piece.value}"></span>` +
-			` white ${piece.value} has moved ${piece.moves} ${pluralOrSingle}`;
+			` white ${CHESS_PIECE_NAMES[piece.value]} has moved ${piece.moves} ${pluralOrSingle}`;
 
 		let pieceMovesItem = document.createElement("li");
 		pieceMovesItem.innerHTML = pieceMoves;
@@ -167,7 +176,7 @@ function showHowManyTimesEachPieceHasMoved() {
 
 		const pieceMoves =
 			`<span class="piece-icon"><img src="${piece.icon}" alt="${piece.value}"></span>` +
-			` black ${piece.value} has moved ${piece.moves} ${pluralOrSingle}`;
+			` black ${CHESS_PIECE_NAMES[piece.value]} has moved ${piece.moves} ${pluralOrSingle}`;
 
 		let pieceMovesItem = document.createElement("li");
 		pieceMovesItem.innerHTML = pieceMoves;
