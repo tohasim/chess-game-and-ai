@@ -763,6 +763,13 @@ function movePieceInModel(piece, index) {
 	//Add a move to the piece
 	piece.moves++;
 	// pawn promotion
+
+	if (piece.value === "p"){
+		hasPawnMoved = true;
+	}
+
+	checkIfMoveCounterCriteriaHasBeenFulFilled();
+
 	if (piece.value === "p" && (piece.row === 0 || piece.row === 7)) {
 		model[piece.row][piece.col].value = "q";
 		if (piece.row === 0) {
@@ -868,14 +875,6 @@ function getKing(color) {
 				return model[i][j];
 			}
 		}
-	}
-}
-
-function checkIfMoveCounterCriteriaHasBeenFulFilled() {
-	if (hasPawnMoved === true && hasPieceBeenCaptured === true) {
-		moveCounter = -1;
-		hasPawnMoved = false;
-		hasPieceBeenCaptured = false;
 	}
 }
 
