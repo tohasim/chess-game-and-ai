@@ -78,6 +78,15 @@ function handleClicks(event) {
 		$("#exampleModalToggle").modal("show");
 		gameOver = true;
 		document.getElementById("center-button").style.display = "flex";
+		document.getElementById("new-game").addEventListener("click", () => {
+			const fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w"; 
+			setModelState(fen);
+			showBoard();
+			moveCounter = 0;
+			showMoveCounter();
+			gameOver = false;
+			document.getElementById("center-button").style.display = "none";
+		});
 		showHowManyTimesEachPieceHasMoved();
 	}
 }
@@ -151,7 +160,7 @@ function showHowManyTimesEachPieceHasMoved() {
 	}
 
 	// BlackPiece Loop
-	for (let i = 0; i < blackPieces.length; i++) {
+		for (let i = blackPieces.length - 1; i >= 0; i--) {
 		const piece = blackPieces[i];
 		console.log(blackPieces[i]);
 		let pluralOrSingle = piece.moves === 1 ? "time" : "times";
@@ -191,6 +200,7 @@ function setModelState(fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w") {
 	const piecePlacement = fenParts[0];
 	moveCounter =
 		fenParts.length === 6 && fenParts[5] !== "-" ? parseInt(fenParts[5]) : 0;
+	showMoveCounter();
 	const rows = piecePlacement.split("/");
 	currentPlayer = fenParts[1] === "w" ? "w" : "b";
 
@@ -203,7 +213,14 @@ function setModelState(fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w") {
 				const color = char.toUpperCase() === char ? "w" : "b";
 				const pieceType = char.toLowerCase();
 				const imagePath = `Chess_pieces/${color.toUpperCase()}${pieceType.toUpperCase()}.png`;
-				row.push(new Piece(color, pieceType, 7 - i, j, imagePath));
+				const piece = new Piece(color, pieceType, 7 - i, j, imagePath)
+				row.push(piece);
+				if (piece.color === "w") {
+					whitePieces.push(piece);
+				} else {
+					blackPieces.push(piece);
+				}
+
 				j++;
 			} else {
 				for (let k = 0; k < parseInt(char); k++) {
