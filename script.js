@@ -13,6 +13,7 @@ let moveCounter = 0;
 let gameOver = false;
 let hasPawnMoved = false;
 let hasPieceBeenCaptured = false;
+let isItWhiteOrBlacksTurn = true; //True er White & False er Black
 
 function init() {
 	// Initialize model
@@ -27,6 +28,7 @@ function init() {
 		showBoard();
 	});
 }
+
 function handleClicks(event) {
 	// Get clicked element, and check whether it's a cell
 	const cell = event.target;
@@ -35,14 +37,16 @@ function handleClicks(event) {
 		if (cell.classList.contains("highlight")) {
 			//Get index from cell
 			const index = cell.getAttribute("data-index");
-			movePieceInModel(chosenPiece, index);
-			showBoard();
-			moveCounter++;
-			showMoveCounter();
-			//console.log(chosenPiece);
-			if (checkCheck(chosenPiece)) {
-				checkMate();
-			}
+			if (chosenPiece.color === "w" && isItWhiteOrBlacksTurn === true || chosenPiece.color === "b" && isItWhiteOrBlacksTurn === false ) {
+				movePieceInModel(chosenPiece, index);
+				showBoard();
+				moveCounter++;
+				showMoveCounter();
+				if (checkCheck(chosenPiece)) {
+					checkMate();
+				}
+				switchTurns();
+			} 
 		}
 		// Otherwise we get the selected piece from the model, and highlight its available moves
 		else {
@@ -51,8 +55,23 @@ function handleClicks(event) {
 				.forEach((cell) => cell.classList.remove("highlight"));
 			const index = event.target.getAttribute("data-index");
 			chosenPiece = model[Math.floor(index / 8)][index % 8];
-			let moves = getAvailableMoves(chosenPiece);
-			moves.forEach((move) => highlightMove(move));
+			if (chosenPiece.color === "w" && isItWhiteOrBlacksTurn === true || chosenPiece.color === "b" && isItWhiteOrBlacksTurn === false ) {
+				let moves = getAvailableMoves(chosenPiece);
+				moves.forEach((move) => highlightMove(move));
+			} else { 
+			
+				 const notAllowedMessage = document.createElement("div");
+				 notAllowedMessage.textContent = "Not allowed";
+				 notAllowedMessage.id = "notAllowedMessage";
+				 document.body.appendChild(notAllowedMessage);
+		 
+				 setTimeout(() => {
+					 notAllowedMessage.style.opacity = 0;
+					 setTimeout(() => {
+						 notAllowedMessage.parentNode.removeChild(notAllowedMessage);
+					 }, 500);
+				 }, 600); 
+			 }
 		}
 	}
 	if (moveCounter === 100) {
@@ -745,6 +764,7 @@ function getAvailableMoves(piece) {
 
 function movePieceInModel(piece, index) {
 	//Make a copy of the current model
+
 	const modelCpy = model.map((element) => ({ ...element }));
 
 	const targetPiece = model[Math.floor(index / 8)][index % 8];
@@ -800,6 +820,7 @@ function movePieceInModel(piece, index) {
 	//en passant move
 
 	console.log(model);
+
 }
 
 function checkCheck(piece) {
@@ -883,6 +904,25 @@ function checkIfMoveCounterCriteriaHasBeenFulFilled() {
 		moveCounter = -1;
 		hasPawnMoved = false;
 		hasPieceBeenCaptured = false;
+	}
+}
+function switchTurns() {
+	switch(isItWhiteOrBlacksTurn){
+		case true:
+			isItWhiteOrBlacksTurn = false;
+			let blackTurn = document.getElementById("playerTurn");
+			blackTurn.textContent = "Black";
+			blackTurn.style.color = "black";
+			blackTurn.style.textShadow = "2px 2px 4px rgb(150, 150, 150)"
+			break;
+			
+		case false:
+			isItWhiteOrBlacksTurn = true;
+			let whiteTurn = document.getElementById("playerTurn");
+			whiteTurn.textContent = "White";
+			whiteTurn.style.color = "white";
+			whiteTurn.style.textShadow = "2px 2px 4px #000000"
+			break;
 	}
 }
 
