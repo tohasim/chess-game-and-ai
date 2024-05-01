@@ -83,3 +83,9 @@ img, svg {
 	font-weight: bold;
 	font-size: 100px;
 }
+
+#new-game:hover {
+	background-color: lightgreen;
+	border-color: lightgreen;
+	
+}
