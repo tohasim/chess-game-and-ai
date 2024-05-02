@@ -802,6 +802,33 @@ function movePieceInModel(piece, index) {
 	console.log(model);
 }
 
+function canEnPassant(piece, targetIndex) {
+	if(piece.value !== "p" || (piece.color === "w" && piece.row !== 4 || (piece.color === "b" && piece.row !== 3))) {
+		return false;
+	}
+
+	const targetCol = targetIndex % 8;
+	if (Math.abs(targetCol - piece.col) !== 1) {
+		return false;
+	}
+
+	const lastMove = moveHistory[moveHistory.length - 1];
+	if (lastMove.piece.value !== "p" || Math.abs(lastMove.startIndex - lastMove.endIndex) !== 16) {
+		return false;
+	}
+	return true;
+}
+
+function performEnPassant(piece, targetIndex) {
+	if (canEnPassant(piece, targetIndex)) {
+		const enemyPawnRow = piece.color === "w" ? piece.row + 1 : piece.row - 1;
+		const enemyPawnCol = targetIndex % 8;
+		model[enemyPawnRow][enemyPawnCol] = new Piece();
+
+		movePieceInModel(piece. targetIndex);
+	}
+}
+
 function checkCheck(piece) {
 	const opponentKing = getKing(currentPlayer === "w" ? "b" : "w");
 	var moves = JSON.stringify(getAvailableMoves(piece));
