@@ -13,7 +13,7 @@ let moveCounter = 0;
 let gameOver = false;
 let hasPawnMoved = false;
 let hasPieceBeenCaptured = false;
-let isItWhiteOrBlacksTurn = true; //True er White & False er Black
+let aiEnabled = false;
 
 function init() {
 	// Initialize model
@@ -37,7 +37,7 @@ function handleClicks(event) {
 		if (cell.classList.contains("highlight")) {
 			//Get index from cell
 			const index = cell.getAttribute("data-index");
-			if (chosenPiece.color === "w" && isItWhiteOrBlacksTurn === true || chosenPiece.color === "b" && isItWhiteOrBlacksTurn === false ) {
+			if (chosenPiece.color === currentPlayer) {
 				movePieceInModel(chosenPiece, index);
 				showBoard();
 				moveCounter++;
@@ -46,7 +46,7 @@ function handleClicks(event) {
 					checkMate();
 				}
 				switchTurns();
-			} 
+			}
 		}
 		// Otherwise we get the selected piece from the model, and highlight its available moves
 		else {
@@ -55,23 +55,22 @@ function handleClicks(event) {
 				.forEach((cell) => cell.classList.remove("highlight"));
 			const index = event.target.getAttribute("data-index");
 			chosenPiece = model[Math.floor(index / 8)][index % 8];
-			if (chosenPiece.color === "w" && isItWhiteOrBlacksTurn === true || chosenPiece.color === "b" && isItWhiteOrBlacksTurn === false ) {
+			if (chosenPiece.color === currentPlayer) {
 				let moves = getAvailableMoves(chosenPiece);
 				moves.forEach((move) => highlightMove(move));
-			} else { 
-			
-				 const notAllowedMessage = document.createElement("div");
-				 notAllowedMessage.textContent = "Not allowed";
-				 notAllowedMessage.id = "notAllowedMessage";
-				 document.body.appendChild(notAllowedMessage);
-		 
-				 setTimeout(() => {
-					 notAllowedMessage.style.opacity = 0;
-					 setTimeout(() => {
-						 notAllowedMessage.parentNode.removeChild(notAllowedMessage);
-					 }, 500);
-				 }, 600); 
-			 }
+			} else {
+				const notAllowedMessage = document.createElement("div");
+				notAllowedMessage.textContent = "Not allowed";
+				notAllowedMessage.id = "notAllowedMessage";
+				document.body.appendChild(notAllowedMessage);
+
+				setTimeout(() => {
+					notAllowedMessage.style.opacity = 0;
+					setTimeout(() => {
+						notAllowedMessage.parentNode.removeChild(notAllowedMessage);
+					}, 500);
+				}, 600);
+			}
 		}
 	}
 	if (moveCounter === 100) {
@@ -79,7 +78,7 @@ function handleClicks(event) {
 		gameOver = true;
 		document.getElementById("center-button").style.display = "flex";
 		document.getElementById("new-game").addEventListener("click", () => {
-			const fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w"; 
+			const fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w";
 			setModelState(fen);
 			showBoard();
 			moveCounter = 0;
@@ -155,13 +154,13 @@ function showMoveCounter() {
 }
 
 const CHESS_PIECE_NAMES = {
-    "r": "Rook",
-    "n": "Knight",
-	"p": "Pawn",
-	"k": "King",
-	"q": "Queen",
-	"b": "Bishop"
-} 
+	r: "Rook",
+	n: "Knight",
+	p: "Pawn",
+	k: "King",
+	q: "Queen",
+	b: "Bishop",
+};
 
 function showHowManyTimesEachPieceHasMoved() {
 	let whitePieceMovesHistory = document.getElementById("whitePiece");
@@ -170,12 +169,13 @@ function showHowManyTimesEachPieceHasMoved() {
 	// WhitePiece Loop
 	for (let i = 0; i < whitePieces.length; i++) {
 		const piece = whitePieces[i];
-		console.log(whitePieces[i]);
 		let pluralOrSingle = piece.moves === 1 ? "time" : "times";
 
 		const pieceMoves =
 			`<span class="piece-icon"><img src="${piece.icon}" alt="${piece.value}"></span>` +
-			` white ${CHESS_PIECE_NAMES[piece.value]} has moved ${piece.moves} ${pluralOrSingle}`;
+			` white ${CHESS_PIECE_NAMES[piece.value]} has moved ${
+				piece.moves
+			} ${pluralOrSingle}`;
 
 		let pieceMovesItem = document.createElement("li");
 		pieceMovesItem.innerHTML = pieceMoves;
@@ -183,14 +183,15 @@ function showHowManyTimesEachPieceHasMoved() {
 	}
 
 	// BlackPiece Loop
-		for (let i = blackPieces.length - 1; i >= 0; i--) {
+	for (let i = blackPieces.length - 1; i >= 0; i--) {
 		const piece = blackPieces[i];
-		console.log(blackPieces[i]);
 		let pluralOrSingle = piece.moves === 1 ? "time" : "times";
 
 		const pieceMoves =
 			`<span class="piece-icon"><img src="${piece.icon}" alt="${piece.value}"></span>` +
-			` black ${CHESS_PIECE_NAMES[piece.value]} has moved ${piece.moves} ${pluralOrSingle}`;
+			` black ${CHESS_PIECE_NAMES[piece.value]} has moved ${
+				piece.moves
+			} ${pluralOrSingle}`;
 
 		let pieceMovesItem = document.createElement("li");
 		pieceMovesItem.innerHTML = pieceMoves;
@@ -236,7 +237,7 @@ function setModelState(fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w") {
 				const color = char.toUpperCase() === char ? "w" : "b";
 				const pieceType = char.toLowerCase();
 				const imagePath = `Chess_pieces/${color.toUpperCase()}${pieceType.toUpperCase()}.png`;
-				const piece = new Piece(color, pieceType, 7 - i, j, imagePath)
+				const piece = new Piece(color, pieceType, 7 - i, j, imagePath);
 				row.push(piece);
 				if (piece.color === "w") {
 					whitePieces.push(piece);
@@ -293,6 +294,7 @@ function getAvailableMoves(piece) {
 				}
 				//En passant move
 				if (
+					piece.col !== 0 &&
 					piece.row === 3 &&
 					model[piece.row][piece.col - 1].value === "p" &&
 					model[piece.row][piece.col - 1].color === "w" &&
@@ -301,6 +303,7 @@ function getAvailableMoves(piece) {
 					moves.push([-1, -1]);
 				}
 				if (
+					piece.col !== 7 &&
 					piece.row === 3 &&
 					model[piece.row][piece.col + 1].value === "p" &&
 					model[piece.row][piece.col + 1].color === "w" &&
@@ -341,6 +344,7 @@ function getAvailableMoves(piece) {
 				}
 				//En passant move
 				if (
+					piece.col !== 0 &&
 					piece.row === 4 &&
 					model[piece.row][piece.col - 1].value === "p" &&
 					model[piece.row][piece.col - 1].color === "b" &&
@@ -349,6 +353,7 @@ function getAvailableMoves(piece) {
 					moves.push([1, -1]);
 				}
 				if (
+					piece.col !== 7 &&
 					piece.row === 4 &&
 					model[piece.row][piece.col + 1].value === "p" &&
 					model[piece.row][piece.col + 1].color === "b" &&
@@ -625,7 +630,6 @@ function getAvailableMoves(piece) {
 					}
 				}
 			}
-			console.log(castleMoves);
 			break;
 		}
 		case "q": {
@@ -824,7 +828,7 @@ function movePieceInModel(piece, index) {
 	piece.moves++;
 	// pawn promotion
 
-	if (piece.value === "p"){
+	if (piece.value === "p") {
 		hasPawnMoved = true;
 	}
 
@@ -840,7 +844,6 @@ function movePieceInModel(piece, index) {
 	}
 	// castling move. check castleMoves array for which rook to move
 	// the big and small letters does the same, but indicate different color. consider deleting later.
-	console.log(castleMoves, "castleMoves");
 	if (castleMoves.includes("bq")) {
 		model[piece.row][3] = model[piece.row][0];
 		model[piece.row][0] = new Piece();
@@ -858,9 +861,6 @@ function movePieceInModel(piece, index) {
 		model[piece.row][7] = new Piece();
 	}
 	//en passant move
-
-	console.log(model);
-
 }
 
 function checkCheck(piece) {
@@ -868,7 +868,6 @@ function checkCheck(piece) {
 	var moves = JSON.stringify(getAvailableMoves(piece));
 	var kingPosition = JSON.stringify([opponentKing.row, opponentKing.col]);
 	if (moves.indexOf(kingPosition) !== -1) {
-		console.log("Checked");
 		return true;
 	}
 	return false;
@@ -888,7 +887,7 @@ function checkMate() {
 		const moves = getAvailableMoves(piece);
 		for (const move of moves) {
 			const pieceCpy = deepCopy(piece);
-			const modelCpy = deepCopy(model);
+			const modelCpy = model.map((element) => ({ ...element }));
 			movePieceInModel(piece, move[0] * 8 + move[1]);
 			if (!checkIfKingIsChecked(currentPlayer === "w" ? "b" : "w")) {
 				model = modelCpy;
@@ -947,22 +946,206 @@ function checkIfMoveCounterCriteriaHasBeenFulFilled() {
 	}
 }
 function switchTurns() {
-	switch(isItWhiteOrBlacksTurn){
-		case true:
-			isItWhiteOrBlacksTurn = false;
-			let blackTurn = document.getElementById("playerTurn");
-			blackTurn.textContent = "Black";
-			blackTurn.style.color = "black";
-			blackTurn.style.textShadow = "2px 2px 4px rgb(150, 150, 150)"
-			break;
-			
-		case false:
-			isItWhiteOrBlacksTurn = true;
-			let whiteTurn = document.getElementById("playerTurn");
-			whiteTurn.textContent = "White";
-			whiteTurn.style.color = "white";
-			whiteTurn.style.textShadow = "2px 2px 4px #000000"
-			break;
+	aiEnabled = document.getElementById("ai-toggle").checked;
+	currentPlayer = currentPlayer === "w" ? "b" : "w";
+	let playerTurn = document.getElementById("playerTurn");
+	let color = currentPlayer === "w" ? "white" : "black";
+	playerTurn.textContent = color;
+	playerTurn.style.color = color;
+	playerTurn.style.textShadow =
+		"2px 2px 4px " + (color === "white" ? "black" : "white");
+
+	if (currentPlayer === "b" && aiEnabled) {
+		const [piece, move] = getBestMove();
+		movePieceInModel(piece, move[0] * 8 + move[1]);
+		showBoard();
+		switchTurns();
 	}
 }
+//#endregion
+
+//#region AI
+function getBestMove() {
+	const pieces = getAllPiecesOfColor(currentPlayer);
+	let bestMove = [];
+	let bestScore = -Infinity;
+	for (let piece of pieces) {
+		const moves = getAvailableMoves(piece);
+		for (const move of moves) {
+			const currentPlayerCpy = currentPlayer;
+			const modelCpy = model.map((element) => ({ ...element }));
+			const pieceCpy = deepCopy(piece);
+			movePieceInModel(piece, move[0] * 8 + move[1]);
+			const score = minimax(2, -Infinity, Infinity, false);
+			if (score > bestScore) {
+				bestScore = score;
+				bestMove = [piece, move];
+			}
+			currentPlayer = currentPlayerCpy;
+			model = modelCpy;
+			piece = pieceCpy;
+		}
+	}
+	console.log(model);
+	console.log(bestMove);
+	return bestMove;
+}
+
+function minimax(depth, alpha, beta, isMaximizing) {
+	if (depth === 0 || checkMate()) {
+		return evaluateBoard();
+	}
+	currentPlayer = isMaximizing ? "w" : "b";
+	const pieces = getAllPiecesOfColor(currentPlayer);
+
+	if (isMaximizing) {
+		let bestScore = -Infinity;
+		for (let piece of pieces) {
+			const moves = getAvailableMoves(piece);
+			for (const move of moves) {
+				const modelCpy = model.map((element) => ({ ...element }));
+				const pieceCpy = deepCopy(piece);
+				movePieceInModel(piece, move[0] * 8 + move[1]);
+				const score = minimax(depth - 1, alpha, beta, false);
+				bestScore = Math.max(score, bestScore);
+				alpha = Math.max(alpha, score);
+				model = modelCpy;
+				piece = pieceCpy;
+				if (beta <= alpha) {
+					break;
+				}
+			}
+		}
+		return bestScore;
+	} else {
+		let bestScore = Infinity;
+		for (let piece of pieces) {
+			const moves = getAvailableMoves(piece);
+			for (const move of moves) {
+				const modelCpy = model.map((element) => ({ ...element }));
+				const pieceCpy = deepCopy(piece);
+				movePieceInModel(piece, move[0] * 8 + move[1]);
+				const score = minimax(depth - 1, alpha, beta, true);
+				bestScore = Math.min(score, bestScore);
+				beta = Math.min(beta, score);
+				model = modelCpy;
+				piece = pieceCpy;
+				if (beta <= alpha) {
+					break;
+				}
+			}
+		}
+		return bestScore;
+	}
+}
+
+// Evaluate the board
+function evaluateBoard() {
+	// start with a score of 0
+	let score = 0;
+
+	// add the material score
+	score += getMaterialScore();
+
+	// add mobility score
+	score += getMobilityScore();
+
+	// add positional score
+	score += getPositionalScore();
+
+	// add King safety score
+	score += getKingSafetyScore();
+
+	// add pawn structure score
+	score += getPawnStructureScore();
+
+	return score;
+}
+
+function getMaterialScore() {
+	let score = 0;
+	const pieces = getAllPiecesOfColor(currentPlayer);
+	for (const piece of pieces) {
+		switch (piece.value) {
+			case "p":
+				score += 1;
+				break;
+			case "n":
+				score += 3;
+				break;
+			case "b":
+				score += 3;
+				break;
+			case "r":
+				score += 5;
+				break;
+			case "q":
+				score += 9;
+				break;
+			case "k":
+				score += 1000;
+				break;
+		}
+	}
+	return score;
+}
+
+function getMobilityScore() {
+	let score = 0;
+	const pieces = getAllPiecesOfColor(currentPlayer);
+	for (const piece of pieces) {
+		const moves = getAvailableMoves(piece);
+		score += moves.length;
+	}
+	return score;
+}
+
+function getPositionalScore() {
+	let score = 0;
+	const pieces = getAllPiecesOfColor(currentPlayer);
+	for (const piece of pieces) {
+		//TODO: Add better logic for positional score
+		switch (piece.value) {
+			case "p":
+				score += piece.row;
+				break;
+			case "n":
+				score += piece.row;
+				break;
+			case "b":
+				score += piece.row;
+				break;
+			case "r":
+				score += piece.row;
+				break;
+			case "q":
+				score += piece.row;
+				break;
+			case "k":
+				score += piece.row;
+				break;
+		}
+	}
+	return score;
+}
+
+function getKingSafetyScore() {
+	let score = 0;
+	const king = getKing(currentPlayer);
+	const moves = getAvailableMoves(king);
+	score -= moves.length;
+	return score;
+}
+
+function getPawnStructureScore() {
+	let score = 0;
+	const pieces = getAllPiecesOfColor(currentPlayer);
+	for (const piece of pieces) {
+		if (piece.value === "p") {
+			score += 1;
+		}
+	}
+	return score;
+}
+
 //#endregion
