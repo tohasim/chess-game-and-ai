@@ -966,6 +966,13 @@ function updateCapturedPieces(piece, targetPiece) {
 		capturedPiecesContainer.appendChild(capturedPiece);
 		hasPieceBeenCaptured = true;
 	}
+	if(isEnPassant) {
+		const enPassantPiece = document.querySelector(`#${piece.position}`);
+		if (enPassantPiece) {
+			enPassantPiece.remove();
+			hasPieceBeenCaptured = true;
+		}
+	}
 }
 //#endregion
 
