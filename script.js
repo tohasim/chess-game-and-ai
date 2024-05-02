@@ -13,6 +13,7 @@ let moveCounter = 0;
 let gameOver = false;
 let hasPawnMoved = false;
 let hasPieceBeenCaptured = false;
+let isItWhiteOrBlacksTurn = true; //True er White & False er Black
 
 function init() {
 	// Initialize model
@@ -27,6 +28,7 @@ function init() {
 		showBoard();
 	});
 }
+
 function handleClicks(event) {
 	// Get clicked element, and check whether it's a cell
 	const cell = event.target;
@@ -35,14 +37,16 @@ function handleClicks(event) {
 		if (cell.classList.contains("highlight")) {
 			//Get index from cell
 			const index = cell.getAttribute("data-index");
-			movePieceInModel(chosenPiece, index);
-			showBoard();
-			moveCounter++;
-			showMoveCounter();
-			//console.log(chosenPiece);
-			if (checkCheck(chosenPiece)) {
-				checkMate();
-			}
+			if (chosenPiece.color === "w" && isItWhiteOrBlacksTurn === true || chosenPiece.color === "b" && isItWhiteOrBlacksTurn === false ) {
+				movePieceInModel(chosenPiece, index);
+				showBoard();
+				moveCounter++;
+				showMoveCounter();
+				if (checkCheck(chosenPiece)) {
+					checkMate();
+				}
+				switchTurns();
+			} 
 		}
 		// Otherwise we get the selected piece from the model, and highlight its available moves
 		else {
@@ -51,14 +55,38 @@ function handleClicks(event) {
 				.forEach((cell) => cell.classList.remove("highlight"));
 			const index = event.target.getAttribute("data-index");
 			chosenPiece = model[Math.floor(index / 8)][index % 8];
-			let moves = getAvailableMoves(chosenPiece);
-			moves.forEach((move) => highlightMove(move));
+			if (chosenPiece.color === "w" && isItWhiteOrBlacksTurn === true || chosenPiece.color === "b" && isItWhiteOrBlacksTurn === false ) {
+				let moves = getAvailableMoves(chosenPiece);
+				moves.forEach((move) => highlightMove(move));
+			} else { 
+			
+				 const notAllowedMessage = document.createElement("div");
+				 notAllowedMessage.textContent = "Not allowed";
+				 notAllowedMessage.id = "notAllowedMessage";
+				 document.body.appendChild(notAllowedMessage);
+		 
+				 setTimeout(() => {
+					 notAllowedMessage.style.opacity = 0;
+					 setTimeout(() => {
+						 notAllowedMessage.parentNode.removeChild(notAllowedMessage);
+					 }, 500);
+				 }, 600); 
+			 }
 		}
 	}
 	if (moveCounter === 100) {
 		$("#exampleModalToggle").modal("show");
 		gameOver = true;
 		document.getElementById("center-button").style.display = "flex";
+		document.getElementById("new-game").addEventListener("click", () => {
+			const fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w"; 
+			setModelState(fen);
+			showBoard();
+			moveCounter = 0;
+			showMoveCounter();
+			gameOver = false;
+			document.getElementById("center-button").style.display = "none";
+		});
 		showHowManyTimesEachPieceHasMoved();
 	}
 }
@@ -126,6 +154,15 @@ function showMoveCounter() {
 	}
 }
 
+const CHESS_PIECE_NAMES = {
+    "r": "Rook",
+    "n": "Knight",
+	"p": "Pawn",
+	"k": "King",
+	"q": "Queen",
+	"b": "Bishop"
+} 
+
 function showHowManyTimesEachPieceHasMoved() {
 	let whitePieceMovesHistory = document.getElementById("whitePiece");
 	let blackPieceMovesHistory = document.getElementById("blackPiece");
@@ -138,7 +175,7 @@ function showHowManyTimesEachPieceHasMoved() {
 
 		const pieceMoves =
 			`<span class="piece-icon"><img src="${piece.icon}" alt="${piece.value}"></span>` +
-			` white ${piece.value} has moved ${piece.moves} ${pluralOrSingle}`;
+			` white ${CHESS_PIECE_NAMES[piece.value]} has moved ${piece.moves} ${pluralOrSingle}`;
 
 		let pieceMovesItem = document.createElement("li");
 		pieceMovesItem.innerHTML = pieceMoves;
@@ -146,14 +183,14 @@ function showHowManyTimesEachPieceHasMoved() {
 	}
 
 	// BlackPiece Loop
-	for (let i = 0; i < blackPieces.length; i++) {
+		for (let i = blackPieces.length - 1; i >= 0; i--) {
 		const piece = blackPieces[i];
 		console.log(blackPieces[i]);
 		let pluralOrSingle = piece.moves === 1 ? "time" : "times";
 
 		const pieceMoves =
 			`<span class="piece-icon"><img src="${piece.icon}" alt="${piece.value}"></span>` +
-			` black ${piece.value} has moved ${piece.moves} ${pluralOrSingle}`;
+			` black ${CHESS_PIECE_NAMES[piece.value]} has moved ${piece.moves} ${pluralOrSingle}`;
 
 		let pieceMovesItem = document.createElement("li");
 		pieceMovesItem.innerHTML = pieceMoves;
@@ -186,6 +223,7 @@ function setModelState(fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w") {
 	const piecePlacement = fenParts[0];
 	moveCounter =
 		fenParts.length === 6 && fenParts[5] !== "-" ? parseInt(fenParts[5]) : 0;
+	showMoveCounter();
 	const rows = piecePlacement.split("/");
 	currentPlayer = fenParts[1] === "w" ? "w" : "b";
 
@@ -198,7 +236,14 @@ function setModelState(fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w") {
 				const color = char.toUpperCase() === char ? "w" : "b";
 				const pieceType = char.toLowerCase();
 				const imagePath = `Chess_pieces/${color.toUpperCase()}${pieceType.toUpperCase()}.png`;
-				row.push(new Piece(color, pieceType, 7 - i, j, imagePath));
+				const piece = new Piece(color, pieceType, 7 - i, j, imagePath)
+				row.push(piece);
+				if (piece.color === "w") {
+					whitePieces.push(piece);
+				} else {
+					blackPieces.push(piece);
+				}
+
 				j++;
 			} else {
 				for (let k = 0; k < parseInt(char); k++) {
@@ -759,6 +804,7 @@ function getAvailableMoves(piece) {
 
 function movePieceInModel(piece, index) {
 	//Make a copy of the current model
+
 	const modelCpy = model.map((element) => ({ ...element }));
 
 	const targetPiece = model[Math.floor(index / 8)][index % 8];
@@ -777,6 +823,13 @@ function movePieceInModel(piece, index) {
 	//Add a move to the piece
 	piece.moves++;
 	// pawn promotion
+
+	if (piece.value === "p"){
+		hasPawnMoved = true;
+	}
+
+	checkIfMoveCounterCriteriaHasBeenFulFilled();
+
 	if (piece.value === "p" && (piece.row === 0 || piece.row === 7)) {
 		model[piece.row][piece.col].value = "q";
 		if (piece.row === 0) {
@@ -807,6 +860,7 @@ function movePieceInModel(piece, index) {
 	//en passant move
 
 	console.log(model);
+
 }
 
 function checkCheck(piece) {
@@ -892,12 +946,23 @@ function checkIfMoveCounterCriteriaHasBeenFulFilled() {
 		hasPieceBeenCaptured = false;
 	}
 }
-
-function checkIfMoveCounterCriteriaHasBeenFulFilled() {
-	if (hasPawnMoved === true && hasPieceBeenCaptured === true) {
-		moveCounter = -1;
-		hasPawnMoved = false;
-		hasPieceBeenCaptured = false;
+function switchTurns() {
+	switch(isItWhiteOrBlacksTurn){
+		case true:
+			isItWhiteOrBlacksTurn = false;
+			let blackTurn = document.getElementById("playerTurn");
+			blackTurn.textContent = "Black";
+			blackTurn.style.color = "black";
+			blackTurn.style.textShadow = "2px 2px 4px rgb(150, 150, 150)"
+			break;
+			
+		case false:
+			isItWhiteOrBlacksTurn = true;
+			let whiteTurn = document.getElementById("playerTurn");
+			whiteTurn.textContent = "White";
+			whiteTurn.style.color = "white";
+			whiteTurn.style.textShadow = "2px 2px 4px #000000"
+			break;
 	}
 }
 //#endregion
