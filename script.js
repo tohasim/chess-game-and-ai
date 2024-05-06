@@ -37,7 +37,10 @@ function handleClicks(event) {
 		if (cell.classList.contains("highlight")) {
 			//Get index from cell
 			const index = cell.getAttribute("data-index");
-			if (chosenPiece.color === "w" && isItWhiteOrBlacksTurn === true || chosenPiece.color === "b" && isItWhiteOrBlacksTurn === false ) {
+			if (
+				(chosenPiece.color === "w" && isItWhiteOrBlacksTurn === true) ||
+				(chosenPiece.color === "b" && isItWhiteOrBlacksTurn === false)
+			) {
 				movePieceInModel(chosenPiece, index);
 				showBoard();
 				moveCounter++;
@@ -46,7 +49,7 @@ function handleClicks(event) {
 					checkMate();
 				}
 				switchTurns();
-			} 
+			}
 		}
 		// Otherwise we get the selected piece from the model, and highlight its available moves
 		else {
@@ -55,23 +58,25 @@ function handleClicks(event) {
 				.forEach((cell) => cell.classList.remove("highlight"));
 			const index = event.target.getAttribute("data-index");
 			chosenPiece = model[Math.floor(index / 8)][index % 8];
-			if (chosenPiece.color === "w" && isItWhiteOrBlacksTurn === true || chosenPiece.color === "b" && isItWhiteOrBlacksTurn === false ) {
+			if (
+				(chosenPiece.color === "w" && isItWhiteOrBlacksTurn === true) ||
+				(chosenPiece.color === "b" && isItWhiteOrBlacksTurn === false)
+			) {
 				let moves = getAvailableMoves(chosenPiece);
 				moves.forEach((move) => highlightMove(move));
-			} else { 
-			
-				 const notAllowedMessage = document.createElement("div");
-				 notAllowedMessage.textContent = "Not allowed";
-				 notAllowedMessage.id = "notAllowedMessage";
-				 document.body.appendChild(notAllowedMessage);
-		 
-				 setTimeout(() => {
-					 notAllowedMessage.style.opacity = 0;
-					 setTimeout(() => {
-						 notAllowedMessage.parentNode.removeChild(notAllowedMessage);
-					 }, 500);
-				 }, 600); 
-			 }
+			} else {
+				const notAllowedMessage = document.createElement("div");
+				notAllowedMessage.textContent = "Not allowed";
+				notAllowedMessage.id = "notAllowedMessage";
+				document.body.appendChild(notAllowedMessage);
+
+				setTimeout(() => {
+					notAllowedMessage.style.opacity = 0;
+					setTimeout(() => {
+						notAllowedMessage.parentNode.removeChild(notAllowedMessage);
+					}, 500);
+				}, 600);
+			}
 		}
 	}
 	if (moveCounter === 100) {
@@ -79,7 +84,7 @@ function handleClicks(event) {
 		gameOver = true;
 		document.getElementById("center-button").style.display = "flex";
 		document.getElementById("new-game").addEventListener("click", () => {
-			const fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w"; 
+			const fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w";
 			setModelState(fen);
 			showBoard();
 			moveCounter = 0;
@@ -136,6 +141,13 @@ function updateCapturedPieces(piece, targetPiece) {
 		capturedPiecesContainer.appendChild(capturedPiece);
 		hasPieceBeenCaptured = true;
 	}
+	if (isEnPassant) {
+		const enPassantPiece = document.querySelector(`#${piece.position}`);
+		if (enPassantPiece) {
+			enPassantPiece.remove();
+			hasPieceBeenCaptured = true;
+		}
+	}
 }
 
 function highlightMove(move) {
@@ -155,13 +167,13 @@ function showMoveCounter() {
 }
 
 const CHESS_PIECE_NAMES = {
-    "r": "Rook",
-    "n": "Knight",
-	"p": "Pawn",
-	"k": "King",
-	"q": "Queen",
-	"b": "Bishop"
-} 
+	r: "Rook",
+	n: "Knight",
+	p: "Pawn",
+	k: "King",
+	q: "Queen",
+	b: "Bishop",
+};
 
 function showHowManyTimesEachPieceHasMoved() {
 	let whitePieceMovesHistory = document.getElementById("whitePiece");
@@ -175,7 +187,9 @@ function showHowManyTimesEachPieceHasMoved() {
 
 		const pieceMoves =
 			`<span class="piece-icon"><img src="${piece.icon}" alt="${piece.value}"></span>` +
-			` white ${CHESS_PIECE_NAMES[piece.value]} has moved ${piece.moves} ${pluralOrSingle}`;
+			` white ${CHESS_PIECE_NAMES[piece.value]} has moved ${
+				piece.moves
+			} ${pluralOrSingle}`;
 
 		let pieceMovesItem = document.createElement("li");
 		pieceMovesItem.innerHTML = pieceMoves;
@@ -183,14 +197,16 @@ function showHowManyTimesEachPieceHasMoved() {
 	}
 
 	// BlackPiece Loop
-		for (let i = blackPieces.length - 1; i >= 0; i--) {
+	for (let i = blackPieces.length - 1; i >= 0; i--) {
 		const piece = blackPieces[i];
 		console.log(blackPieces[i]);
 		let pluralOrSingle = piece.moves === 1 ? "time" : "times";
 
 		const pieceMoves =
 			`<span class="piece-icon"><img src="${piece.icon}" alt="${piece.value}"></span>` +
-			` black ${CHESS_PIECE_NAMES[piece.value]} has moved ${piece.moves} ${pluralOrSingle}`;
+			` black ${CHESS_PIECE_NAMES[piece.value]} has moved ${
+				piece.moves
+			} ${pluralOrSingle}`;
 
 		let pieceMovesItem = document.createElement("li");
 		pieceMovesItem.innerHTML = pieceMoves;
@@ -236,7 +252,7 @@ function setModelState(fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w") {
 				const color = char.toUpperCase() === char ? "w" : "b";
 				const pieceType = char.toLowerCase();
 				const imagePath = `Chess_pieces/${color.toUpperCase()}${pieceType.toUpperCase()}.png`;
-				const piece = new Piece(color, pieceType, 7 - i, j, imagePath)
+				const piece = new Piece(color, pieceType, 7 - i, j, imagePath);
 				row.push(piece);
 				if (piece.color === "w") {
 					whitePieces.push(piece);
@@ -824,7 +840,7 @@ function movePieceInModel(piece, index) {
 	piece.moves++;
 	// pawn promotion
 
-	if (piece.value === "p"){
+	if (piece.value === "p") {
 		hasPawnMoved = true;
 	}
 
@@ -860,7 +876,6 @@ function movePieceInModel(piece, index) {
 	//en passant move
 
 	console.log(model);
-
 }
 
 function checkCheck(piece) {
@@ -947,21 +962,21 @@ function checkIfMoveCounterCriteriaHasBeenFulFilled() {
 	}
 }
 function switchTurns() {
-	switch(isItWhiteOrBlacksTurn){
+	switch (isItWhiteOrBlacksTurn) {
 		case true:
 			isItWhiteOrBlacksTurn = false;
 			let blackTurn = document.getElementById("playerTurn");
 			blackTurn.textContent = "Black";
 			blackTurn.style.color = "black";
-			blackTurn.style.textShadow = "2px 2px 4px rgb(150, 150, 150)"
+			blackTurn.style.textShadow = "2px 2px 4px rgb(150, 150, 150)";
 			break;
-			
+
 		case false:
 			isItWhiteOrBlacksTurn = true;
 			let whiteTurn = document.getElementById("playerTurn");
 			whiteTurn.textContent = "White";
 			whiteTurn.style.color = "white";
-			whiteTurn.style.textShadow = "2px 2px 4px #000000"
+			whiteTurn.style.textShadow = "2px 2px 4px #000000";
 			break;
 	}
 }
