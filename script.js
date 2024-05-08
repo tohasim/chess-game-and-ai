@@ -154,6 +154,7 @@ class Piece {
     this.col = col;
     this.icon = icon;
     this.moves = 0;
+    this.enPassant = false;
   }
 }
 
@@ -399,19 +400,25 @@ function getAvailableMoves(piece) {
         //En passant move
         if (
           piece.row === 3 &&
+          model[piece.row][piece.col - 1] &&
           model[piece.row][piece.col - 1].value === "p" &&
           model[piece.row][piece.col - 1].color === "w" &&
           model[piece.row][piece.col - 1].moves === 1
         ) {
           moves.push([-1, -1]);
+          model.enPassant = true;
+          console.log("Model",model)
         }
         if (
           piece.row === 3 &&
+          model[piece.row][piece.col + 1] &&
           model[piece.row][piece.col + 1].value === "p" &&
           model[piece.row][piece.col + 1].color === "w" &&
           model[piece.row][piece.col + 1].moves === 1
         ) {
           moves.push([-1, 1]);
+          model.enPassant = true;
+          console.log("Model", model)
         }
         // pawn promotion
         if (piece.row === 1) {
@@ -446,6 +453,7 @@ function getAvailableMoves(piece) {
         //En passant move
         if (
           piece.row === 4 &&
+          model[piece.row][piece.col - 1] &&
           model[piece.row][piece.col - 1].value === "p" &&
           model[piece.row][piece.col - 1].color === "b" &&
           model[piece.row][piece.col - 1].moves === 1
@@ -454,6 +462,7 @@ function getAvailableMoves(piece) {
         }
         if (
           piece.row === 4 &&
+          model[piece.row][piece.col + 1] &&
           model[piece.row][piece.col + 1].value === "p" &&
           model[piece.row][piece.col + 1].color === "b" &&
           model[piece.row][piece.col + 1].moves === 1
@@ -938,7 +947,6 @@ function movePieceInModel(piece, cell) {
   }
   // castling move. check castleMoves array for which rook to move
   // the big and small letters does the same, but indicate different color. consider deleting later.
-  console.log(castleMoves, 'castleMoves')
   if (castleMoves.includes("bq")) {
     model[piece.row][3] = model[piece.row][0];
     model[piece.row][0] = new Piece();
@@ -955,7 +963,9 @@ function movePieceInModel(piece, cell) {
     model[piece.row][5] = model[piece.row][7];
     model[piece.row][7] = new Piece();
   }
-  //en passant move
+
+
+
 
  
   console.log(model);
