@@ -240,6 +240,9 @@ function getAvailableMoves(piece) {
 					model[piece.row][piece.col - 1].moves === 1
 				) {
 					moves.push([-1, -1]);
+					model[piece.row][piece.col - 1] = null;
+					updateCapturedPieces(piece, model[piece.row][piece.col - 1]);
+					
 				}
 				if (
 					piece.row === 3 &&
@@ -248,6 +251,9 @@ function getAvailableMoves(piece) {
 					model[piece.row][piece.col + 1].moves === 1
 				) {
 					moves.push([-1, 1]);
+					model[piece.row][piece.col + 1] = null;
+					updateCapturedPieces(piece, model[piece.row][piece.col + 1]);
+					
 				}
 				// pawn promotion
 				if (piece.row === 1) {
@@ -797,37 +803,10 @@ function movePieceInModel(piece, index) {
 		model[piece.row][5] = model[piece.row][7];
 		model[piece.row][7] = new Piece();
 	}
-	//en passant move
-
+	
 	console.log(model);
 }
 
-function canEnPassant(piece, targetIndex) {
-	if(piece.value !== "p" || (piece.color === "w" && piece.row !== 4 || (piece.color === "b" && piece.row !== 3))) {
-		return false;
-	}
-
-	const targetCol = targetIndex % 8;
-	if (Math.abs(targetCol - piece.col) !== 1) {
-		return false;
-	}
-
-	const lastMove = moveHistory[moveHistory.length - 1];
-	if (lastMove.piece.value !== "p" || Math.abs(lastMove.startIndex - lastMove.endIndex) !== 16) {
-		return false;
-	}
-	return true;
-}
-
-function performEnPassant(piece, targetIndex) {
-	if (canEnPassant(piece, targetIndex)) {
-		const enemyPawnRow = piece.color === "w" ? piece.row + 1 : piece.row - 1;
-		const enemyPawnCol = targetIndex % 8;
-		model[enemyPawnRow][enemyPawnCol] = new Piece();
-
-		movePieceInModel(piece. targetIndex);
-	}
-}
 
 function checkCheck(piece) {
 	const opponentKing = getKing(currentPlayer === "w" ? "b" : "w");
@@ -915,6 +894,7 @@ function checkIfMoveCounterCriteriaHasBeenFulFilled() {
 
 //#region VIEW
 //#region VIEW
+
 function updateCapturedPieces(piece, targetPiece) {
 	if (targetPiece) {
 		const capturedPiecesContainer = document.getElementById(
@@ -927,14 +907,11 @@ function updateCapturedPieces(piece, targetPiece) {
 		capturedPiecesContainer.appendChild(capturedPiece);
 		hasPieceBeenCaptured = true;
 	}
-	if(isEnPassant) {
-		const enPassantPiece = document.querySelector(`#${piece.position}`);
-		if (enPassantPiece) {
-			enPassantPiece.remove();
-			hasPieceBeenCaptured = true;
-		}
-	}
 }
+
+
+
+
 //#endregion
 
 //#endregion
