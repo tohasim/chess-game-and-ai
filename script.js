@@ -10,10 +10,10 @@ let chosenPiece;
 //White player starts
 let currentPlayer = "w";
 let moveCounter = 0;
+let fullMoveCounter = 1;
 let gameOver = false;
 let hasPawnMoved = false;
 let hasPieceBeenCaptured = false;
-let isItWhiteOrBlacksTurn = true; //True er White & False er Black
 
 function init() {
 	// Initialize model
@@ -37,10 +37,7 @@ function handleClicks(event) {
 		if (cell.classList.contains("highlight")) {
 			//Get index from cell
 			const index = cell.getAttribute("data-index");
-			if (
-				(chosenPiece.color === "w" && isItWhiteOrBlacksTurn === true) ||
-				(chosenPiece.color === "b" && isItWhiteOrBlacksTurn === false)
-			) {
+			if (chosenPiece.color === currentPlayer) {
 				movePieceInModel(chosenPiece, index);
 				showBoard();
 				moveCounter++;
@@ -58,10 +55,7 @@ function handleClicks(event) {
 				.forEach((cell) => cell.classList.remove("highlight"));
 			const index = event.target.getAttribute("data-index");
 			chosenPiece = model[Math.floor(index / 8)][index % 8];
-			if (
-				(chosenPiece.color === "w" && isItWhiteOrBlacksTurn === true) ||
-				(chosenPiece.color === "b" && isItWhiteOrBlacksTurn === false)
-			) {
+			if (chosenPiece.color === currentPlayer) {
 				let moves = getAvailableMoves(chosenPiece);
 				moves.forEach((move) => highlightMove(move));
 			} else {
@@ -140,13 +134,6 @@ function updateCapturedPieces(piece, targetPiece) {
 		capturedPiece.classList.add("captured-piece");
 		capturedPiecesContainer.appendChild(capturedPiece);
 		hasPieceBeenCaptured = true;
-	}
-	if (isEnPassant) {
-		const enPassantPiece = document.querySelector(`#${piece.position}`);
-		if (enPassantPiece) {
-			enPassantPiece.remove();
-			hasPieceBeenCaptured = true;
-		}
 	}
 }
 
@@ -232,6 +219,8 @@ class Piece {
 let model = [];
 const blackPieces = [];
 const whitePieces = [];
+let availableCastling = "KQkq";
+let availableEnPassant = "-";
 
 function setModelState(fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w") {
 	model = [];
@@ -263,7 +252,7 @@ function setModelState(fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w") {
 				j++;
 			} else {
 				for (let k = 0; k < parseInt(char); k++) {
-					row.push(new Piece());
+					row.push(new Piece("", "", 7 - i, j, ""));
 					j++;
 				}
 			}
@@ -307,22 +296,19 @@ function getAvailableMoves(piece) {
 				) {
 					moves.push([-1, 1]);
 				}
-				//En passant move
-				if (
-					piece.row === 3 &&
-					model[piece.row][piece.col - 1].value === "p" &&
-					model[piece.row][piece.col - 1].color === "w" &&
-					model[piece.row][piece.col - 1].moves === 1
-				) {
-					moves.push([-1, -1]);
-				}
-				if (
-					piece.row === 3 &&
-					model[piece.row][piece.col + 1].value === "p" &&
-					model[piece.row][piece.col + 1].color === "w" &&
-					model[piece.row][piece.col + 1].moves === 1
-				) {
-					moves.push([-1, 1]);
+				// en passant
+				if (availableEnPassant != "-") {
+					let coord = getCoordFromPositionString(availableEnPassant);
+					let passantRow = coord.row;
+					let passantCol = coord.col;
+					if (passantRow === piece.row - 1 && passantCol === piece.col - 1) {
+						moves.push([-1, -1]);
+					} else if (
+						passantRow === piece.row - 1 &&
+						passantCol === piece.col + 1
+					) {
+						moves.push([-1, 1]);
+					}
 				}
 				// pawn promotion
 				if (piece.row === 1) {
@@ -355,22 +341,19 @@ function getAvailableMoves(piece) {
 				) {
 					moves.push([1, 1]);
 				}
-				//En passant move
-				if (
-					piece.row === 4 &&
-					model[piece.row][piece.col - 1].value === "p" &&
-					model[piece.row][piece.col - 1].color === "b" &&
-					model[piece.row][piece.col - 1].moves === 1
-				) {
-					moves.push([1, -1]);
-				}
-				if (
-					piece.row === 4 &&
-					model[piece.row][piece.col + 1].value === "p" &&
-					model[piece.row][piece.col + 1].color === "b" &&
-					model[piece.row][piece.col + 1].moves === 1
-				) {
-					moves.push([1, 1]);
+				// en passant
+				if (availableEnPassant != "-") {
+					let coord = getCoordFromPositionString(availableEnPassant);
+					let passantRow = coord.row;
+					let passantCol = coord.col;
+					if (passantRow === piece.row + 1 && passantCol === piece.col - 1) {
+						moves.push([1, -1]);
+					} else if (
+						passantRow === piece.row + 1 &&
+						passantCol === piece.col + 1
+					) {
+						moves.push([1, 1]);
+					}
 				}
 				// pawn promotion
 				if (piece.row === 6) {
@@ -818,12 +801,38 @@ function getAvailableMoves(piece) {
 	return moves;
 }
 
-function movePieceInModel(piece, index) {
-	//Make a copy of the current model
+function getCoordFromPositionString(positionString) {
+	const col = positionString.charCodeAt(0) - 97;
+	const row = parseInt(positionString.split("")[1] - 1);
+	return { row, col };
+}
 
+function getPositionStringFromCoord(coord) {
+	const row = coord[0];
+	const col = coord[1];
+	let letter = String.fromCharCode(97 + col);
+	return `${letter}${row + 1}`;
+}
+
+function movePieceInModel(piece, index) {
+	availableEnPassant = "-";
+	//Make a copy of the current model
 	const modelCpy = model.map((element) => ({ ...element }));
 
 	const targetPiece = model[Math.floor(index / 8)][index % 8];
+	if (piece.value === "p" && Math.abs(targetPiece.row - piece.row) === 2) {
+		if (piece.color === "w") {
+			availableEnPassant = getPositionStringFromCoord([
+				targetPiece.row - 1,
+				targetPiece.col,
+			]);
+		} else {
+			availableEnPassant = getPositionStringFromCoord([
+				targetPiece.row + 1,
+				targetPiece.col,
+			]);
+		}
+	}
 	if (targetPiece.value !== "") {
 		updateCapturedPieces(piece, targetPiece);
 	}
@@ -962,22 +971,320 @@ function checkIfMoveCounterCriteriaHasBeenFulFilled() {
 	}
 }
 function switchTurns() {
-	switch (isItWhiteOrBlacksTurn) {
-		case true:
-			isItWhiteOrBlacksTurn = false;
-			let blackTurn = document.getElementById("playerTurn");
-			blackTurn.textContent = "Black";
-			blackTurn.style.color = "black";
-			blackTurn.style.textShadow = "2px 2px 4px rgb(150, 150, 150)";
-			break;
+	currentPlayer = currentPlayer === "w" ? "b" : "w";
 
-		case false:
-			isItWhiteOrBlacksTurn = true;
-			let whiteTurn = document.getElementById("playerTurn");
-			whiteTurn.textContent = "White";
-			whiteTurn.style.color = "white";
-			whiteTurn.style.textShadow = "2px 2px 4px #000000";
-			break;
+	const currColor = currentPlayer === "w" ? "white" : "black";
+	const turnElement = document.getElementById("playerTurn");
+	turnElement.textContent = currColor;
+	turnElement.style.color = currColor;
+	turnElement.style.textShadow =
+		currColor === "white"
+			? "2px 2px 4px rgb(150, 150, 150)"
+			: "2px 2px 4px #000000";
+}
+//#endregion
+
+//#region AI
+class GameState {
+	constructor(
+		searchModel,
+		player = currentPlayer,
+		castling = availableCastling,
+		enPassant = availableEnPassant,
+		halfMove = moveCounter,
+		fullMove = fullMoveCounter
+	) {
+		this.searchModel = searchModel;
+		this.player = player;
+		this.castling = castling;
+		this.enPassant = enPassant;
+		this.halfMove = halfMove;
+		this.fullMove = fullMove;
+		this.score = 0;
 	}
 }
+
+let gameState = null;
+
+function initSearchModel() {
+	let searchModel = [];
+	model.forEach((row) => {
+		searchModel.push(
+			row.map((cell) => {
+				if (cell.color === "w") {
+					cell.value = cell.value.toUpperCase();
+				}
+				return cell.value;
+			})
+		);
+	});
+	gameState = new GameState(searchModel);
+}
+
+function getBestMove() {
+	let bestMove = null;
+	initSearchModel();
+	bestMove = alphaBeta(gameState, -Infinity, Infinity, 3, true);
+	return bestMove;
+}
+
+function alphaBeta(game, alpha, beta, depth, isMaximizingPlayer) {
+	// If node is a leaf node, return the static evaluation
+	if (depth === 0) {
+		return staticEvaluation();
+	}
+	// If node is a max node
+	if (isMaximizingPlayer)
+		// While alpha < beta
+		while (alpha < beta) {
+			// Get all children
+			let children = getAllChildrenStates(game, "w");
+			// For each child
+			for (let child of children) {
+				// Value = alphaBeta(child, alpha, beta, depth - 1, false)
+				let value = alphaBeta(child, alpha, beta, depth - 1, false);
+				// alpha = max(alpha, value)
+				alpha = Math.max(alpha, value);
+			}
+			// return alpha
+			return alpha;
+		}
+	// If node is a min node
+	// While alpha < beta
+	else
+		while (alpha < beta) {
+			// Get all children
+			let children = getAllChildrenStates(game, "b");
+			// For each child
+			for (let child of children) {
+				// Value = alphaBeta(child, alpha, beta, depth - 1, true)
+				let value = alphaBeta(child, alpha, beta, depth - 1, true);
+				// beta = min(beta, value)
+				beta = Math.min(beta, value);
+			}
+			// return beta
+			return beta;
+		}
+}
+
+function staticEvaluation(gameState) {
+	const allPieces = gameState.searchModel.flat();
+	let score = 0;
+	allPieces.forEach((piece) => {
+		let pieceValue = 0;
+		switch (piece.toLowerCase()) {
+			case "p":
+				pieceValue += 1;
+				break;
+			case "n":
+				pieceValue += 3;
+				break;
+			case "b":
+				pieceValue += 3;
+				break;
+			case "r":
+				pieceValue += 5;
+				break;
+			case "q":
+				pieceValue += 9;
+				break;
+			case "k":
+				pieceValue += 100;
+				break;
+		}
+		//White maximizes, black minimizes
+		if (piece === piece.toUpperCase()) {
+			score += pieceValue;
+		} else {
+			score -= pieceValue;
+		}
+	});
+	return score;
+}
+
+function getAllChildrenStates(game, color) {
+	let states = [];
+	for (let row = 0; row < 8; row++) {
+		for (let col = 0; col < 8; col++) {
+			if (game.searchModel[row][col].color === color) {
+				const piece = game.searchModel[row][col];
+				const pieceMoves = getMovesForPiece(piece, row, col, game);
+				for (let move of pieceMoves) {
+					let gameCopy = deepCopy(game);
+					movePieceInGame(gameCopy, piece, move[0], move[1]);
+					states.push(gameCopy);
+				}
+			}
+		}
+	}
+	// sorter states efter score
+	return states;
+}
+
+function getMovesForPiece(piece, row, col, game) {
+	let moves = [];
+	switch (piece) {
+		case "p":
+			moves = getPawnMoves();
+			let color = piece === piece.toUpperCase() ? "w" : "b";
+			moves = addPawnAttacks(moves, game, row, col, color);
+			break;
+		case "n":
+			moves = getKnightMoves();
+			break;
+		case "b":
+			moves = getBishopMoves();
+			break;
+		case "r":
+			moves = getRookMoves();
+			break;
+		case "q":
+			moves = getQueenMoves();
+			break;
+		case "k":
+			moves = getKingMoves();
+			break;
+	}
+
+	// add the current position to the moves
+	moves = moves.map((move) => {
+		move[0] += row;
+		move[1] += col;
+		return move;
+	});
+
+	// filter out moves that are out of bounds
+	moves = moves.filter((move) => {
+		return move[0] >= 0 && move[0] <= 7 && move[1] >= 0 && move[1] <= 7;
+	});
+	return moves;
+}
+
+function addPawnAttacks(moves, game, row, col, color) {
+	if (color === "w") {
+		if (checkForEnemy(game, row + 1, col + 1, color)) {
+			moves.add([1, 1]);
+		}
+		if (checkForEnemy(game, row + 1, col - 1, color)) {
+			moves.add([1, -1]);
+		}
+	} else {
+		if (checkForEnemy(game, row - 1, col + 1, color)) {
+			moves.add([-1, 1]);
+		}
+		if (checkForEnemy(game, row - 1, col + 1, color)) {
+			moves.add([-1, -1]);
+		}
+	}
+}
+
+function checkForEnemy(game, row, col, playerColor) {
+	target = game.searchModel[row][col];
+	if (target != "") {
+		let targetColor = target === target.toUpperCase ? "w" : "b";
+		if (targetColor !== playerColor) {
+			return true;
+		}
+	}
+	return false;
+}
+
+function getPawnMoves() {
+	return [
+		[1, 0],
+		[2, 0],
+	];
+}
+function getKnightMoves() {
+	return [
+		[2, 1],
+		[2, -1],
+		[1, 2],
+		[1, -2],
+		[-2, 1],
+		[-2, -1],
+		[-1, 2],
+		[-1, -2],
+	];
+}
+function getBishopMoves() {
+	return [
+		[1, 1],
+		[2, 2],
+		[3, 3],
+		[4, 4],
+		[5, 5],
+		[6, 6],
+		[7, 7],
+		[-1, -1],
+		[-2, -2],
+		[-3, -3],
+		[-4, -4],
+		[-5, -5],
+		[-6, -6],
+		[-7, -7],
+		[1, -1],
+		[2, -2],
+		[3, -3],
+		[4, -4],
+		[5, -5],
+		[6, -6],
+		[7, -7],
+		[-1, 1],
+		[-2, 2],
+		[-3, 3],
+		[-4, 4],
+		[-5, 5],
+		[-6, 6],
+		[-7, 7],
+	];
+}
+function getRookMoves() {
+	return [
+		[1, 0],
+		[2, 0],
+		[3, 0],
+		[4, 0],
+		[5, 0],
+		[6, 0],
+		[7, 0],
+		[-1, 0],
+		[-2, 0],
+		[-3, 0],
+		[-4, 0],
+		[-5, 0],
+		[-6, 0],
+		[-7, 0],
+		[0, 1],
+		[0, 2],
+		[0, 3],
+		[0, 4],
+		[0, 5],
+		[0, 6],
+		[0, 7],
+		[0, -1],
+		[0, -2],
+		[0, -3],
+		[0, -4],
+		[0, -5],
+		[0, -6],
+		[0, -7],
+	];
+}
+function getQueenMoves() {
+	return getRookMoves().concat(getBishopMoves());
+}
+function getKingMoves() {
+	return [
+		[1, 0],
+		[1, 1],
+		[0, 1],
+		[-1, 1],
+		[-1, 0],
+		[-1, -1],
+		[0, -1],
+		[1, -1],
+	];
+}
+
 //#endregion
