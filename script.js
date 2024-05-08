@@ -1146,6 +1146,7 @@ function staticEvaluation(gameState) {
 			score -= pieceValue;
 		}
 	});
+
 	return score;
 }
 
@@ -1281,7 +1282,7 @@ function addPawnAttacks(moves, game, row, col, color) {
 		if (checkForEnemy(game, row - 1, col + 1, color)) {
 			moves.push([-1, 1]);
 		}
-		if (checkForEnemy(game, row - 1, col + 1, color)) {
+		if (checkForEnemy(game, row - 1, col - 1, color)) {
 			moves.push([-1, -1]);
 		}
 	}
@@ -1291,12 +1292,9 @@ function addPawnAttacks(moves, game, row, col, color) {
 function checkForEnemy(game, row, col, playerColor) {
 	let target = game.searchModel[row][col];
 	if (row >= 0 && row < 8 && col >= 0 && col < 8 && target != "") {
-		let targetColor = target === target.toUpperCase ? "w" : "b";
-		if (targetColor !== playerColor) {
-			return true;
-		}
+		let targetColor = target === target.toUpperCase() ? "w" : "b";
+		return targetColor !== playerColor;
 	}
-	return false;
 }
 
 function getPawnMoves(game, row, col, color) {
@@ -1356,8 +1354,7 @@ function getKnightMoves(row, col, game) {
 			// Check if the destination cell is empty or contains an opponent's piece
 			if (
 				game.searchModel[newRow][newCol] === "" ||
-				game.searchModel[newRow][newCol].color !==
-					game.searchModel[row][col].color
+				checkForEnemy(game, newRow, newCol, game.player)
 			) {
 				moves.push(offset);
 			}
@@ -1416,8 +1413,7 @@ function getKingMoves(row, col, game) {
 			// Check if the destination cell is empty or contains an opponent's piece
 			if (
 				game.searchModel[newRow][newCol] === "" ||
-				game.searchModel[newRow][newCol].color !==
-					game.searchModel[row][col].color
+				checkForEnemy(game, newRow, newCol, game.player)
 			) {
 				moves.push(offset);
 			}
@@ -1479,8 +1475,7 @@ function getNorthEastMoves(game, row, col) {
 		row + rowCounter != 7 &&
 		col + colCounter != 7 &&
 		game.searchModel[row + rowCounter + 1][col + colCounter + 1] !== "" &&
-		game.searchModel[row + rowCounter + 1][col + colCounter + 1].color !==
-			game.searchModel[row][col].color
+		checkForEnemy(game, row + rowCounter + 1, col + colCounter + 1, game.player)
 	) {
 		moves.push([rowCounter + 1, colCounter + 1]);
 	}
@@ -1504,8 +1499,7 @@ function getSouthEastMoves(game, row, col) {
 		row + rowCounter != 0 &&
 		col + colCounter != 7 &&
 		game.searchModel[row + rowCounter - 1][col + colCounter + 1] !== "" &&
-		game.searchModel[row + rowCounter - 1][col + colCounter + 1].color !==
-			game.searchModel[row][col].color
+		checkForEnemy(game, row + rowCounter - 1, col + colCounter + 1, game.player)
 	) {
 		moves.push([rowCounter - 1, colCounter + 1]);
 	}
@@ -1529,8 +1523,7 @@ function getSouthWestMoves(game, row, col) {
 		row + rowCounter != 0 &&
 		col + colCounter != 0 &&
 		game.searchModel[row + rowCounter - 1][col + colCounter - 1] !== "" &&
-		game.searchModel[row + rowCounter - 1][col + colCounter - 1].color !==
-			game.searchModel[row][col].color
+		checkForEnemy(game, row + rowCounter - 1, col + colCounter - 1, game.player)
 	) {
 		moves.push([rowCounter - 1, colCounter - 1]);
 	}
@@ -1554,8 +1547,7 @@ function getNorthWestMoves(game, row, col) {
 		row + rowCounter != 7 &&
 		col + colCounter != 0 &&
 		game.searchModel[row + rowCounter + 1][col + colCounter - 1] !== "" &&
-		game.searchModel[row + rowCounter + 1][col + colCounter - 1].color !==
-			game.searchModel[row][col].color
+		checkForEnemy(game, row + rowCounter + 1, col + colCounter - 1, game.player)
 	) {
 		moves.push([rowCounter + 1, colCounter - 1]);
 	}
@@ -1576,8 +1568,7 @@ function getNorthMoves(game, row, col) {
 	if (
 		row + rowCounter != 7 &&
 		game.searchModel[row + rowCounter + 1][col] !== "" &&
-		game.searchModel[row + rowCounter + 1][col].color !==
-			game.searchModel[row][col].color
+		checkForEnemy(game, row + rowCounter + 1, col, game.player)
 	) {
 		moves.push([rowCounter + 1, colCounter]);
 	}
@@ -1598,8 +1589,7 @@ function getEastMoves(game, row, col) {
 	if (
 		col + colCounter != 7 &&
 		game.searchModel[row][col + colCounter + 1] !== "" &&
-		game.searchModel[row][col + colCounter + 1].color !==
-			game.searchModel[row][col].color
+		checkForEnemy(game, row, col + colCounter + 1, game.player)
 	) {
 		moves.push([rowCounter, colCounter + 1]);
 	}
@@ -1620,8 +1610,7 @@ function getSouthMoves(game, row, col) {
 	if (
 		row + rowCounter != 0 &&
 		game.searchModel[row + rowCounter - 1][col] !== "" &&
-		game.searchModel[row + rowCounter - 1][col].color !==
-			game.searchModel[row][col].color
+		checkForEnemy(game, row + rowCounter - 1, col, game.player)
 	) {
 		moves.push([rowCounter - 1, colCounter]);
 	}
@@ -1642,8 +1631,7 @@ function getWestMoves(game, row, col) {
 	if (
 		col + colCounter != 0 &&
 		game.searchModel[row][col + colCounter - 1] !== "" &&
-		game.searchModel[row][col + colCounter - 1].color !==
-			game.searchModel[row][col].color
+		checkForEnemy(game, row, col + colCounter - 1, game.player)
 	) {
 		moves.push([rowCounter, colCounter - 1]);
 	}
