@@ -20,6 +20,8 @@ function init() {
 	setModelState();
 	// Render model to view
 	showBoard();
+	initSearchModel();
+
 	// Listen for clicks
 	board.addEventListener("click", (event) => handleClicks(event));
 	document.getElementById("game-state-button").addEventListener("click", () => {
@@ -27,6 +29,10 @@ function init() {
 		setModelState(fen);
 		showBoard();
 	});
+}
+
+function sleep(ms) {
+	return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function handleClicks(event) {
@@ -105,7 +111,7 @@ function showBoard() {
 			const newCell = document.createElement("div");
 			newCell.setAttribute("data-index", index);
 			// TODO: For debugging, could probably be removed
-			//newCell.textContent = `${model[i][j].color}${model[i][j].value}`;
+			//newCell.textContent = `${index}`;
 			newCell.classList.add("cell");
 			// Create the chess pattern
 			(i + 1 * 8 + j) % 2 === 0
@@ -267,7 +273,7 @@ let castleMoves = [];
 function getAvailableMoves(piece) {
 	let moves = [];
 	//Find out which piece we want to move
-	switch (piece.value) {
+	switch (piece.value.toLowerCase()) {
 		case "p":
 			//Check whether pawn is black or white
 			if (piece.color === "b") {
@@ -817,7 +823,7 @@ function getPositionStringFromCoord(coord) {
 function movePieceInModel(piece, index) {
 	availableEnPassant = "-";
 	//Make a copy of the current model
-	const modelCpy = model.map((element) => ({ ...element }));
+	const modelCpy = model.map((element) => [...element]);
 
 	const targetPiece = model[Math.floor(index / 8)][index % 8];
 	if (piece.value === "p" && Math.abs(targetPiece.row - piece.row) === 2) {
@@ -844,7 +850,7 @@ function movePieceInModel(piece, index) {
 	//Add piece to it's new position, based on the updated attributes
 	modelCpy[piece.row][piece.col] = piece;
 	//Update the real model
-	model = modelCpy.map((element) => ({ ...element }));
+	model = modelCpy.map((element) => [...element]);
 	//Add a move to the piece
 	piece.moves++;
 	// pawn promotion
@@ -981,6 +987,22 @@ function switchTurns() {
 		currColor === "white"
 			? "2px 2px 4px rgb(150, 150, 150)"
 			: "2px 2px 4px #000000";
+	if (currentPlayer === "b") {
+		sleep(10).then(() => {
+			let bestMove = getBestMove();
+			let bestPiece =
+				model[bestMove.lastMove.piece.row][bestMove.lastMove.piece.col];
+			let bestIndex = bestMove.lastMove.newRow * 8 + bestMove.lastMove.newCol;
+			movePieceInModel(bestPiece, bestIndex);
+			showBoard();
+			moveCounter++;
+			showMoveCounter();
+			if (checkCheck(chosenPiece)) {
+				checkMate();
+			}
+			switchTurns();
+		});
+	}
 }
 //#endregion
 
@@ -1001,6 +1023,9 @@ class GameState {
 		this.halfMove = halfMove;
 		this.fullMove = fullMove;
 		this.score = 0;
+		this.whitePieces = [];
+		this.blackPieces = [];
+		this.lastMove = null;
 	}
 }
 
@@ -1008,63 +1033,85 @@ let gameState = null;
 
 function initSearchModel() {
 	let searchModel = [];
+	let whitePieces = [];
+	let blackPieces = [];
 	model.forEach((row) => {
 		searchModel.push(
 			row.map((cell) => {
+				let value = cell.value;
 				if (cell.color === "w") {
-					cell.value = cell.value.toUpperCase();
+					value = cell.value.toUpperCase();
+					whitePieces.push({ value: value, row: cell.row, col: cell.col });
+				} else if (cell.color === "b") {
+					blackPieces.push({ value: value, row: cell.row, col: cell.col });
 				}
-				return cell.value;
+				return value;
 			})
 		);
 	});
 	gameState = new GameState(searchModel);
+	gameState.whitePieces = whitePieces;
+	gameState.blackPieces = blackPieces;
+	gameState.score = staticEvaluation(gameState);
 }
 
 function getBestMove() {
 	let bestMove = null;
 	initSearchModel();
-	bestMove = alphaBeta(gameState, -Infinity, Infinity, 3, true);
-	return bestMove;
+	bestMove = alphaBeta(gameState, -Infinity, Infinity, 5, false);
+	return bestMove.state;
 }
 
 function alphaBeta(game, alpha, beta, depth, isMaximizingPlayer) {
 	// If node is a leaf node, return the static evaluation
 	if (depth === 0) {
-		return staticEvaluation();
+		return { score: game.score, state: game };
 	}
 	// If node is a max node
-	if (isMaximizingPlayer)
-		// While alpha < beta
-		while (alpha < beta) {
-			// Get all children
-			let children = getAllChildrenStates(game, "w");
-			// For each child
-			for (let child of children) {
-				// Value = alphaBeta(child, alpha, beta, depth - 1, false)
-				let value = alphaBeta(child, alpha, beta, depth - 1, false);
-				// alpha = max(alpha, value)
-				alpha = Math.max(alpha, value);
+	if (isMaximizingPlayer) {
+		let bestValue = { score: -Infinity, state: null };
+		// Get all children
+		let children = getAllChildrenStates(game, "w");
+		// For each child
+		for (let child of children) {
+			// Value = alphaBeta(child, alpha, beta, depth - 1, false)
+			let value = alphaBeta(child, alpha, beta, depth - 1, false);
+			// alpha = max(alpha, value)
+			alpha = Math.max(alpha, value.score);
+			// If value.score > bestValue.score, update bestValue
+			if (value.score > bestValue.score) {
+				bestValue.score = value.score;
+				bestValue.state = child;
 			}
-			// return alpha
-			return alpha;
-		}
-	// If node is a min node
-	// While alpha < beta
-	else
-		while (alpha < beta) {
-			// Get all children
-			let children = getAllChildrenStates(game, "b");
-			// For each child
-			for (let child of children) {
-				// Value = alphaBeta(child, alpha, beta, depth - 1, true)
-				let value = alphaBeta(child, alpha, beta, depth - 1, true);
-				// beta = min(beta, value)
-				beta = Math.min(beta, value);
+			// If beta <= alpha, prune remaining nodes
+			if (beta <= alpha) {
+				break;
 			}
-			// return beta
-			return beta;
 		}
+		return bestValue;
+	} else {
+		// If node is a min node
+		let bestValue = { score: Infinity, state: null };
+		// Get all children
+		let children = getAllChildrenStates(game, "b");
+		// For each child
+		for (let child of children) {
+			// Value = alphaBeta(child, alpha, beta, depth - 1, true)
+			let value = alphaBeta(child, alpha, beta, depth - 1, true);
+			// beta = min(beta, value)
+			beta = Math.min(beta, value.score);
+			// If value.score < bestValue.score, update bestValue
+			if (value.score < bestValue.score) {
+				bestValue.score = value.score;
+				bestValue.state = child;
+			}
+			// If beta <= alpha, prune remaining nodes
+			if (beta <= alpha) {
+				break;
+			}
+		}
+		return bestValue;
+	}
 }
 
 function staticEvaluation(gameState) {
@@ -1104,45 +1151,107 @@ function staticEvaluation(gameState) {
 
 function getAllChildrenStates(game, color) {
 	let states = [];
-	for (let row = 0; row < 8; row++) {
-		for (let col = 0; col < 8; col++) {
-			if (game.searchModel[row][col].color === color) {
-				const piece = game.searchModel[row][col];
-				const pieceMoves = getMovesForPiece(piece, row, col, game);
-				for (let move of pieceMoves) {
-					let gameCopy = deepCopy(game);
-					movePieceInGame(gameCopy, piece, move[0], move[1]);
-					states.push(gameCopy);
-				}
-			}
+	let pieceList = color === "w" ? game.whitePieces : game.blackPieces;
+	for (let piece of pieceList) {
+		const pieceMoves = getMovesForPiece(
+			piece.value,
+			piece.row,
+			piece.col,
+			game
+		);
+		for (let move of pieceMoves) {
+			let gameCopy = deepCopy(game);
+			gameCopy = movePieceInGame(gameCopy, piece, move[0], move[1]);
+			states.push(gameCopy);
 		}
 	}
 	// sorter states efter score
+	states.sort((a, b) => {
+		return a.score - b.score;
+	});
 	return states;
+}
+
+function getColorOfPiece(piece) {
+	return piece === piece.toUpperCase() ? "w" : "b";
+}
+
+function movePieceInGame(game, piece, newRow, newCol) {
+	let previousePiece = game.searchModel[newRow][newCol];
+	game.searchModel[newRow][newCol] = piece.value;
+	game.searchModel[piece.row][piece.col] = "";
+	//update castling
+	switch (piece.value) {
+		case "K":
+			game.castling = game.castling.replace("Q", "");
+			game.castling = game.castling.replace("K", "");
+			break;
+		case "k":
+			game.castling = game.castling.replace("k", "");
+			game.castling = game.castling.replace("q", "");
+			break;
+		case "r":
+		case "R":
+			if (piece.row === 0 && piece.col === 0) {
+				game.castling = game.castling.replace("Q", "");
+			}
+			if (piece.row === 0 && piece.col === 7) {
+				game.castling = game.castling.replace("K", "");
+			}
+			if (piece.row === 7 && piece.col === 0) {
+				game.castling = game.castling.replace("q", "");
+			}
+			if (piece.row === 7 && piece.col === 7) {
+				game.castling = game.castling.replace("k", "");
+			}
+			break;
+	}
+	//update en passant
+	if (piece.value === "P" && Math.abs(newRow - piece.row) === 2) {
+		game.enPassant = getPositionStringFromCoord([newRow - 1, newCol]);
+	} else {
+		game.enPassant = "-";
+	}
+	//update halfmove
+	if (piece.value.toLowerCase === "p" || previousePiece !== "") {
+		game.halfMove = 0;
+	} else {
+		game.halfMove++;
+	}
+	//update fullmove
+	if (game.player === "b") {
+		game.fullMove++;
+	}
+	//update score
+	game.score = staticEvaluation(game);
+	//change player
+	game.player = game.player === "w" ? "b" : "w";
+	//update last move
+	game.lastMove = { piece: piece, newRow: newRow, newCol: newCol };
+	return game;
 }
 
 function getMovesForPiece(piece, row, col, game) {
 	let moves = [];
-	switch (piece) {
+	let color = piece === piece.toUpperCase() ? "w" : "b";
+	switch (piece.toLowerCase()) {
 		case "p":
-			moves = getPawnMoves();
-			let color = piece === piece.toUpperCase() ? "w" : "b";
-			moves = addPawnAttacks(moves, game, row, col, color);
+			moves = getPawnMoves(game, row, col, color);
 			break;
 		case "n":
-			moves = getKnightMoves();
+			moves = getKnightMoves(row, col, game);
 			break;
 		case "b":
-			moves = getBishopMoves();
+			moves = getBishopMoves(game, row, col);
 			break;
 		case "r":
-			moves = getRookMoves();
+			moves = getRookMoves(game, row, col);
 			break;
 		case "q":
-			moves = getQueenMoves();
+			moves = getQueenMoves(game, row, col);
 			break;
 		case "k":
-			moves = getKingMoves();
+			moves = getKingMoves(row, col, game);
 			break;
 	}
 
@@ -1163,24 +1272,25 @@ function getMovesForPiece(piece, row, col, game) {
 function addPawnAttacks(moves, game, row, col, color) {
 	if (color === "w") {
 		if (checkForEnemy(game, row + 1, col + 1, color)) {
-			moves.add([1, 1]);
+			moves.push([1, 1]);
 		}
 		if (checkForEnemy(game, row + 1, col - 1, color)) {
-			moves.add([1, -1]);
+			moves.push([1, -1]);
 		}
 	} else {
 		if (checkForEnemy(game, row - 1, col + 1, color)) {
-			moves.add([-1, 1]);
+			moves.push([-1, 1]);
 		}
 		if (checkForEnemy(game, row - 1, col + 1, color)) {
-			moves.add([-1, -1]);
+			moves.push([-1, -1]);
 		}
 	}
+	return moves;
 }
 
 function checkForEnemy(game, row, col, playerColor) {
-	target = game.searchModel[row][col];
-	if (target != "") {
+	let target = game.searchModel[row][col];
+	if (row >= 0 && row < 8 && col >= 0 && col < 8 && target != "") {
 		let targetColor = target === target.toUpperCase ? "w" : "b";
 		if (targetColor !== playerColor) {
 			return true;
@@ -1189,102 +1299,353 @@ function checkForEnemy(game, row, col, playerColor) {
 	return false;
 }
 
-function getPawnMoves() {
-	return [
-		[1, 0],
-		[2, 0],
-	];
-}
-function getKnightMoves() {
-	return [
-		[2, 1],
-		[2, -1],
-		[1, 2],
-		[1, -2],
-		[-2, 1],
-		[-2, -1],
-		[-1, 2],
-		[-1, -2],
-	];
-}
-function getBishopMoves() {
-	return [
-		[1, 1],
-		[2, 2],
-		[3, 3],
-		[4, 4],
-		[5, 5],
-		[6, 6],
-		[7, 7],
-		[-1, -1],
-		[-2, -2],
-		[-3, -3],
-		[-4, -4],
-		[-5, -5],
-		[-6, -6],
-		[-7, -7],
-		[1, -1],
-		[2, -2],
-		[3, -3],
-		[4, -4],
-		[5, -5],
-		[6, -6],
-		[7, -7],
-		[-1, 1],
-		[-2, 2],
-		[-3, 3],
-		[-4, 4],
-		[-5, 5],
-		[-6, 6],
-		[-7, 7],
-	];
-}
-function getRookMoves() {
-	return [
-		[1, 0],
-		[2, 0],
-		[3, 0],
-		[4, 0],
-		[5, 0],
-		[6, 0],
-		[7, 0],
-		[-1, 0],
-		[-2, 0],
-		[-3, 0],
-		[-4, 0],
-		[-5, 0],
-		[-6, 0],
-		[-7, 0],
-		[0, 1],
-		[0, 2],
-		[0, 3],
-		[0, 4],
-		[0, 5],
-		[0, 6],
-		[0, 7],
-		[0, -1],
-		[0, -2],
-		[0, -3],
-		[0, -4],
-		[0, -5],
-		[0, -6],
-		[0, -7],
-	];
-}
-function getQueenMoves() {
-	return getRookMoves().concat(getBishopMoves());
-}
-function getKingMoves() {
-	return [
-		[1, 0],
-		[1, 1],
-		[0, 1],
-		[-1, 1],
-		[-1, 0],
-		[-1, -1],
-		[0, -1],
-		[1, -1],
-	];
+function getPawnMoves(game, row, col, color) {
+	let moves = [];
+	// check if the pawn can move forward
+	if (color === "w") {
+		if (game.searchModel[row + 1][col] === "") {
+			moves.push([1, 0]);
+			if (row === 1 && game.searchModel[row + 2][col] === "") {
+				moves.push([2, 0]);
+			}
+		}
+	} else {
+		if (game.searchModel[row - 1][col] === "") {
+			moves.push([-1, 0]);
+			if (row === 6 && game.searchModel[row - 2][col] === "") {
+				moves.push([-2, 0]);
+			}
+		}
+	}
+	moves = addPawnAttacks(moves, game, row, col, color);
+	//add en passant
+	if (color === "w") {
+		if (game.enPassant === getPositionStringFromCoord([row + 1, col + 1])) {
+			moves.push([1, 1]);
+		}
+		if (game.enPassant === getPositionStringFromCoord([row + 1, col - 1])) {
+			moves.push([1, -1]);
+		}
+	} else {
+		if (game.enPassant === getPositionStringFromCoord([row - 1, col + 1])) {
+			moves.push([-1, 1]);
+		}
+		if (game.enPassant === getPositionStringFromCoord([row - 1, col - 1])) {
+			moves.push([-1, -1]);
+		}
+	}
+	return moves;
 }
 
-//#endregion
+function getKnightMoves(row, col, game) {
+	const offsets = [
+		[-2, -1],
+		[-2, 1],
+		[-1, -2],
+		[-1, 2],
+		[1, -2],
+		[1, 2],
+		[2, -1],
+		[2, 1],
+	];
+	let moves = [];
+	offsets.forEach((offset) => {
+		const newRow = row + offset[0];
+		const newCol = col + offset[1];
+		if (newRow >= 0 && newRow <= 7 && newCol >= 0 && newCol <= 7) {
+			// Check if the destination cell is empty or contains an opponent's piece
+			if (
+				game.searchModel[newRow][newCol] === "" ||
+				game.searchModel[newRow][newCol].color !==
+					game.searchModel[row][col].color
+			) {
+				moves.push(offset);
+			}
+		}
+	});
+	return moves;
+}
+
+function getBishopMoves(game, row, col) {
+	let moves = [];
+	moves = moves.concat(getNorthEastMoves(game, row, col));
+	moves = moves.concat(getSouthEastMoves(game, row, col));
+	moves = moves.concat(getSouthWestMoves(game, row, col));
+	moves = moves.concat(getNorthWestMoves(game, row, col));
+	return moves;
+}
+
+function getRookMoves(game, row, col) {
+	let moves = [];
+	moves = moves.concat(getNorthMoves(game, row, col));
+	moves = moves.concat(getEastMoves(game, row, col));
+	moves = moves.concat(getSouthMoves(game, row, col));
+	moves = moves.concat(getWestMoves(game, row, col));
+	return moves;
+}
+
+function getQueenMoves(game, row, col) {
+	let moves = [];
+	moves = moves.concat(getNorthEastMoves(game, row, col));
+	moves = moves.concat(getSouthEastMoves(game, row, col));
+	moves = moves.concat(getSouthWestMoves(game, row, col));
+	moves = moves.concat(getNorthWestMoves(game, row, col));
+	moves = moves.concat(getNorthMoves(game, row, col));
+	moves = moves.concat(getEastMoves(game, row, col));
+	moves = moves.concat(getSouthMoves(game, row, col));
+	moves = moves.concat(getWestMoves(game, row, col));
+	return moves;
+}
+
+function getKingMoves(row, col, game) {
+	const offsets = [
+		[0, -1],
+		[1, -1],
+		[1, 0],
+		[1, 1],
+		[0, 1],
+		[-1, 1],
+		[-1, 0],
+		[-1, -1],
+	];
+	let moves = [];
+	offsets.forEach((offset) => {
+		const newRow = row + offset[0];
+		const newCol = col + offset[1];
+		if (newRow >= 0 && newRow <= 7 && newCol >= 0 && newCol <= 7) {
+			// Check if the destination cell is empty or contains an opponent's piece
+			if (
+				game.searchModel[newRow][newCol] === "" ||
+				game.searchModel[newRow][newCol].color !==
+					game.searchModel[row][col].color
+			) {
+				moves.push(offset);
+			}
+		}
+	});
+
+	// check castling string for castling moves, and whether we can actually castle
+	if (
+		game.player === "w" &&
+		game.castling.includes("K") &&
+		game.searchModel[row][5] === "" &&
+		game.searchModel[row][6] === ""
+	) {
+		moves.push([0, 2]);
+	}
+	if (
+		game.player === "w" &&
+		game.castling.includes("Q") &&
+		game.searchModel[row][1] === "" &&
+		game.searchModel[row][2] === "" &&
+		game.searchModel[row][3] === ""
+	) {
+		moves.push([0, -2]);
+	}
+	if (
+		game.player === "b" &&
+		game.castling.includes("k") &&
+		game.searchModel[row][5] === "" &&
+		game.searchModel[row][6] === ""
+	) {
+		moves.push([0, 2]);
+	}
+	if (
+		game.player === "b" &&
+		game.castling.includes("q") &&
+		game.searchModel[row][1] === "" &&
+		game.searchModel[row][2] === "" &&
+		game.searchModel[row][3] === ""
+	) {
+		moves.push([0, -2]);
+	}
+
+	return moves;
+}
+function getNorthEastMoves(game, row, col) {
+	let moves = [];
+	let rowCounter = 0;
+	let colCounter = 0;
+	while (
+		row + rowCounter < 7 &&
+		col + colCounter < 7 &&
+		game.searchModel[row + rowCounter + 1][col + colCounter + 1] === ""
+	) {
+		rowCounter++;
+		colCounter++;
+		moves.push([rowCounter, colCounter]);
+	}
+	if (
+		row + rowCounter != 7 &&
+		col + colCounter != 7 &&
+		game.searchModel[row + rowCounter + 1][col + colCounter + 1] !== "" &&
+		game.searchModel[row + rowCounter + 1][col + colCounter + 1].color !==
+			game.searchModel[row][col].color
+	) {
+		moves.push([rowCounter + 1, colCounter + 1]);
+	}
+	return moves;
+}
+
+function getSouthEastMoves(game, row, col) {
+	let moves = [];
+	let rowCounter = 0;
+	let colCounter = 0;
+	while (
+		row + rowCounter > 0 &&
+		col + colCounter < 7 &&
+		game.searchModel[row + rowCounter - 1][col + colCounter + 1] === ""
+	) {
+		rowCounter--;
+		colCounter++;
+		moves.push([rowCounter, colCounter]);
+	}
+	if (
+		row + rowCounter != 0 &&
+		col + colCounter != 7 &&
+		game.searchModel[row + rowCounter - 1][col + colCounter + 1] !== "" &&
+		game.searchModel[row + rowCounter - 1][col + colCounter + 1].color !==
+			game.searchModel[row][col].color
+	) {
+		moves.push([rowCounter - 1, colCounter + 1]);
+	}
+	return moves;
+}
+
+function getSouthWestMoves(game, row, col) {
+	let moves = [];
+	let rowCounter = 0;
+	let colCounter = 0;
+	while (
+		row + rowCounter > 0 &&
+		col + colCounter > 0 &&
+		game.searchModel[row + rowCounter - 1][col + colCounter - 1] === ""
+	) {
+		rowCounter--;
+		colCounter--;
+		moves.push([rowCounter, colCounter]);
+	}
+	if (
+		row + rowCounter != 0 &&
+		col + colCounter != 0 &&
+		game.searchModel[row + rowCounter - 1][col + colCounter - 1] !== "" &&
+		game.searchModel[row + rowCounter - 1][col + colCounter - 1].color !==
+			game.searchModel[row][col].color
+	) {
+		moves.push([rowCounter - 1, colCounter - 1]);
+	}
+	return moves;
+}
+
+function getNorthWestMoves(game, row, col) {
+	let moves = [];
+	let rowCounter = 0;
+	let colCounter = 0;
+	while (
+		row + rowCounter < 7 &&
+		col + colCounter > 0 &&
+		game.searchModel[row + rowCounter + 1][col + colCounter - 1] === ""
+	) {
+		rowCounter++;
+		colCounter--;
+		moves.push([rowCounter, colCounter]);
+	}
+	if (
+		row + rowCounter != 7 &&
+		col + colCounter != 0 &&
+		game.searchModel[row + rowCounter + 1][col + colCounter - 1] !== "" &&
+		game.searchModel[row + rowCounter + 1][col + colCounter - 1].color !==
+			game.searchModel[row][col].color
+	) {
+		moves.push([rowCounter + 1, colCounter - 1]);
+	}
+	return moves;
+}
+
+function getNorthMoves(game, row, col) {
+	let moves = [];
+	let rowCounter = 0;
+	let colCounter = 0;
+	while (
+		row + rowCounter < 7 &&
+		game.searchModel[row + rowCounter + 1][col] === ""
+	) {
+		rowCounter++;
+		moves.push([rowCounter, colCounter]);
+	}
+	if (
+		row + rowCounter != 7 &&
+		game.searchModel[row + rowCounter + 1][col] !== "" &&
+		game.searchModel[row + rowCounter + 1][col].color !==
+			game.searchModel[row][col].color
+	) {
+		moves.push([rowCounter + 1, colCounter]);
+	}
+	return moves;
+}
+
+function getEastMoves(game, row, col) {
+	let moves = [];
+	let rowCounter = 0;
+	let colCounter = 0;
+	while (
+		col + colCounter < 7 &&
+		game.searchModel[row][col + colCounter + 1] === ""
+	) {
+		colCounter++;
+		moves.push([rowCounter, colCounter]);
+	}
+	if (
+		col + colCounter != 7 &&
+		game.searchModel[row][col + colCounter + 1] !== "" &&
+		game.searchModel[row][col + colCounter + 1].color !==
+			game.searchModel[row][col].color
+	) {
+		moves.push([rowCounter, colCounter + 1]);
+	}
+	return moves;
+}
+
+function getSouthMoves(game, row, col) {
+	let moves = [];
+	let rowCounter = 0;
+	let colCounter = 0;
+	while (
+		row + rowCounter > 0 &&
+		game.searchModel[row + rowCounter - 1][col] === ""
+	) {
+		rowCounter--;
+		moves.push([rowCounter, colCounter]);
+	}
+	if (
+		row + rowCounter != 0 &&
+		game.searchModel[row + rowCounter - 1][col] !== "" &&
+		game.searchModel[row + rowCounter - 1][col].color !==
+			game.searchModel[row][col].color
+	) {
+		moves.push([rowCounter - 1, colCounter]);
+	}
+	return moves;
+}
+
+function getWestMoves(game, row, col) {
+	let moves = [];
+	let rowCounter = 0;
+	let colCounter = 0;
+	while (
+		col + colCounter > 0 &&
+		game.searchModel[row][col + colCounter - 1] === ""
+	) {
+		colCounter--;
+		moves.push([rowCounter, colCounter]);
+	}
+	if (
+		col + colCounter != 0 &&
+		game.searchModel[row][col + colCounter - 1] !== "" &&
+		game.searchModel[row][col + colCounter - 1].color !==
+			game.searchModel[row][col].color
+	) {
+		moves.push([rowCounter, colCounter - 1]);
+	}
+	return moves;
+}
