@@ -10,1055 +10,1281 @@ let chosenPiece;
 //White player starts
 let currentPlayer = "w";
 let moveCounter = 0;
+let fullMoveCounter = 1;
 let gameOver = false;
 let hasPawnMoved = false;
 let hasPieceBeenCaptured = false;
 
 function init() {
-  // Initialize model
-  initModel();
-  // Render model to view
-  showBoard();
-  // Listen for clicks
-  board.addEventListener("click", (event) => handleClicks(event));
+	// Initialize model
+	setModelState();
+	// Render model to view
+	showBoard();
+	// Listen for clicks
+	board.addEventListener("click", (event) => handleClicks(event));
+	document.getElementById("game-state-button").addEventListener("click", () => {
+		const fen = document.getElementById("game-state-input").value;
+		setModelState(fen);
+		showBoard();
+	});
 }
 
 function handleClicks(event) {
-  // Get clicked element, and check whether it's a cell
-  const cell = event.target;
-  if (cell.classList.contains("cell") && gameOver === false) {
-    // If the clicked cell is highlighted we move there
-    if (cell.classList.contains("highlight")) {
-      movePieceInModel(chosenPiece, cell);
-      showBoard();
-      moveCounter++;
-      showMoveCounter();
-      //console.log(chosenPiece);
-      if (checkCheck(chosenPiece)) {
-        checkMate();
-      }
-    }
-    // Otherwise we get the selected piece from the model, and highlight its available moves
-    else {
-      document
-        .querySelectorAll(".highlight")
-        .forEach((cell) => cell.classList.remove("highlight"));
-      const index = event.target.getAttribute("data-index");
-      chosenPiece = model[Math.floor(index / 8)][index % 8];
-      let moves = getAvailableMoves(chosenPiece);
-      moves.forEach((move) => highlightMove(move));
-    }
-  }
-  if (moveCounter === 100) {
-    $("#exampleModalToggle").modal("show");
-    gameOver = true;
-    document.getElementById("center-button").style.display = "flex";
-    showHowManyTimesEachPieceHasMoved();
-  }
+	// Get clicked element, and check whether it's a cell
+	const cell = event.target;
+	if (cell.classList.contains("cell") && gameOver === false) {
+		// If the clicked cell is highlighted we move there
+		if (cell.classList.contains("highlight")) {
+			//Get index from cell
+			const index = cell.getAttribute("data-index");
+			if (chosenPiece.color === currentPlayer) {
+				movePieceInModel(chosenPiece, index);
+				showBoard();
+				moveCounter++;
+				showMoveCounter();
+				if (checkCheck(chosenPiece)) {
+					checkMate();
+				}
+				switchTurns();
+			}
+		}
+		// Otherwise we get the selected piece from the model, and highlight its available moves
+		else {
+			document
+				.querySelectorAll(".highlight")
+				.forEach((cell) => cell.classList.remove("highlight"));
+			const index = event.target.getAttribute("data-index");
+			chosenPiece = model[Math.floor(index / 8)][index % 8];
+			if (chosenPiece.color === currentPlayer) {
+				let moves = getAvailableMoves(chosenPiece);
+				moves.forEach((move) => highlightMove(move));
+			} else {
+				const notAllowedMessage = document.createElement("div");
+				notAllowedMessage.textContent = "Not allowed";
+				notAllowedMessage.id = "notAllowedMessage";
+				document.body.appendChild(notAllowedMessage);
+
+				setTimeout(() => {
+					notAllowedMessage.style.opacity = 0;
+					setTimeout(() => {
+						notAllowedMessage.parentNode.removeChild(notAllowedMessage);
+					}, 500);
+				}, 600);
+			}
+		}
+	}
+	if (moveCounter === 100) {
+		$("#exampleModalToggle").modal("show");
+		gameOver = true;
+		document.getElementById("center-button").style.display = "flex";
+		document.getElementById("new-game").addEventListener("click", () => {
+			const fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w";
+			setModelState(fen);
+			showBoard();
+			moveCounter = 0;
+			showMoveCounter();
+			gameOver = false;
+			document.getElementById("center-button").style.display = "none";
+		});
+		showHowManyTimesEachPieceHasMoved();
+	}
 }
 
 //#endregion
 
 //#region VIEW
 function showBoard() {
-  // Get the board container div, remove current board
-  const board = document.getElementById("board");
-  board.innerHTML = "";
-  //Count down as css draws from top to bottom, and we want white to be bottom
-  for (let i = 7; i >= 0; i--) {
-    for (let j = 0; j < 8; j++) {
-      // Get the current index, and create new div with the index as data-index attribute
-      let index = i * 8 + j;
-      const newCell = document.createElement("div");
-      newCell.setAttribute("data-index", index);
-      // TODO: For debugging, could probably be removed
-      //newCell.textContent = `${model[i][j].color}${model[i][j].value}`;
-      newCell.classList.add("cell");
-      // Create the chess pattern
-      (i + 1 * 8 + j) % 2 === 0
-        ? newCell.classList.add("black")
-        : newCell.classList.add("white");
-      // If the model has a piece at current position
-      if (model[i][j].icon != null) {
-        // Insert the icon
-        newCell.style.backgroundImage = `url(${model[i][j].icon})`;
-        newCell.style.backgroundSize = "cover";
-      }
-      // Add new cell to board
-      board.appendChild(newCell);
-    }
-  }
+	// Get the board container div, remove current board
+	const board = document.getElementById("board");
+	board.innerHTML = "";
+	//Count down as css draws from top to bottom, and we want white to be bottom
+	for (let i = 7; i >= 0; i--) {
+		for (let j = 0; j < 8; j++) {
+			// Get the current index, and create new div with the index as data-index attribute
+			let index = i * 8 + j;
+			const newCell = document.createElement("div");
+			newCell.setAttribute("data-index", index);
+			// TODO: For debugging, could probably be removed
+			//newCell.textContent = `${model[i][j].color}${model[i][j].value}`;
+			newCell.classList.add("cell");
+			// Create the chess pattern
+			(i + 1 * 8 + j) % 2 === 0
+				? newCell.classList.add("black")
+				: newCell.classList.add("white");
+			// If the model has a piece at current position
+			if (model[i][j].icon != null) {
+				// Insert the icon
+				newCell.style.backgroundImage = `url(${model[i][j].icon})`;
+				newCell.style.backgroundSize = "cover";
+			}
+			// Add new cell to board
+			board.appendChild(newCell);
+		}
+	}
+}
+
+function updateCapturedPieces(piece, targetPiece) {
+	if (targetPiece) {
+		const capturedPiecesContainer = document.getElementById(
+			targetPiece.color === "w" ? "captured-white" : "captured-black"
+		);
+		const capturedPiece = document.createElement("img");
+		capturedPiece.src = targetPiece.icon;
+		capturedPiece.alt = `${targetPiece.color}_${targetPiece.value}`;
+		capturedPiece.classList.add("captured-piece");
+		capturedPiecesContainer.appendChild(capturedPiece);
+		hasPieceBeenCaptured = true;
+	}
 }
 
 function highlightMove(move) {
-  // Calculate which index we want to highlight, necessary since the board is upside down compared to the model
-  const index = 63 - (7 - move[1]) - move[0] * 8;
-  // Highlight the cell
-  const cells = document.querySelectorAll(".cell");
-  cells[index].classList.add("highlight");
+	// Calculate which index we want to highlight, necessary since the board is upside down compared to the model
+	const index = 63 - (7 - move[1]) - move[0] * 8;
+	// Highlight the cell
+	const cells = document.querySelectorAll(".cell");
+	cells[index].classList.add("highlight");
 }
 
 function showMoveCounter() {
 	let moveCounterElement = document.getElementById("moveCounter");
 	moveCounterElement.textContent = "Move nr. " + Math.floor(moveCounter / 2);
-	if(moveCounter === 100) {
+	if (moveCounter === 100) {
 		moveCounterElement.textContent = "Game over";
 	}
 }
 
+const CHESS_PIECE_NAMES = {
+	r: "Rook",
+	n: "Knight",
+	p: "Pawn",
+	k: "King",
+	q: "Queen",
+	b: "Bishop",
+};
+
 function showHowManyTimesEachPieceHasMoved() {
-    let whitePieceMovesHistory = document.getElementById("whitePiece");
-    let blackPieceMovesHistory = document.getElementById("blackPiece");
+	let whitePieceMovesHistory = document.getElementById("whitePiece");
+	let blackPieceMovesHistory = document.getElementById("blackPiece");
 
-    // WhitePiece Loop
-    for (let i = 0; i < whitePieces.length; i++) {
-        const piece = whitePieces[i];
-        console.log(whitePieces[i]);
-        let pluralOrSingle = piece.moves === 1 ? "time" : "times";
+	// WhitePiece Loop
+	for (let i = 0; i < whitePieces.length; i++) {
+		const piece = whitePieces[i];
+		console.log(whitePieces[i]);
+		let pluralOrSingle = piece.moves === 1 ? "time" : "times";
 
-        const pieceMoves =
-            `<span class="piece-icon"><img src="${piece.icon}" alt="${piece.value}"></span>` +
-            ` white ${piece.value} has moved ${piece.moves} ${pluralOrSingle}`;
+		const pieceMoves =
+			`<span class="piece-icon"><img src="${piece.icon}" alt="${piece.value}"></span>` +
+			` white ${CHESS_PIECE_NAMES[piece.value]} has moved ${
+				piece.moves
+			} ${pluralOrSingle}`;
 
-        let pieceMovesItem = document.createElement("li");
-        pieceMovesItem.innerHTML = pieceMoves;
-        whitePieceMovesHistory.appendChild(pieceMovesItem);
-    }
+		let pieceMovesItem = document.createElement("li");
+		pieceMovesItem.innerHTML = pieceMoves;
+		whitePieceMovesHistory.appendChild(pieceMovesItem);
+	}
 
-    // BlackPiece Loop
-    for (let i = 0; i < blackPieces.length; i++) {
-        const piece = blackPieces[i];
-        console.log(blackPieces[i]);
-        let pluralOrSingle = piece.moves === 1 ? "time" : "times";
+	// BlackPiece Loop
+	for (let i = blackPieces.length - 1; i >= 0; i--) {
+		const piece = blackPieces[i];
+		console.log(blackPieces[i]);
+		let pluralOrSingle = piece.moves === 1 ? "time" : "times";
 
-        const pieceMoves =
-            `<span class="piece-icon"><img src="${piece.icon}" alt="${piece.value}"></span>` +
-            ` black ${piece.value} has moved ${piece.moves} ${pluralOrSingle}`;
+		const pieceMoves =
+			`<span class="piece-icon"><img src="${piece.icon}" alt="${piece.value}"></span>` +
+			` black ${CHESS_PIECE_NAMES[piece.value]} has moved ${
+				piece.moves
+			} ${pluralOrSingle}`;
 
-        let pieceMovesItem = document.createElement("li");
-        pieceMovesItem.innerHTML = pieceMoves;
-        blackPieceMovesHistory.appendChild(pieceMovesItem);
-    }
+		let pieceMovesItem = document.createElement("li");
+		pieceMovesItem.innerHTML = pieceMoves;
+		blackPieceMovesHistory.appendChild(pieceMovesItem);
+	}
 }
-
 
 //#endregion
 
 //#region MODEL
 class Piece {
-  // Constructor for the Piece class,
-  constructor(color = "", value = "", row = 0, col = 0, icon) {
-    this.color = color;
-    this.value = value;
-    this.row = row;
-    this.col = col;
-    this.icon = icon;
-    this.moves = 0;
-    this.enPassant = false;
-  }
+	// Constructor for the Piece class,
+	constructor(color = "", value = "", row = 0, col = 0, icon) {
+		this.color = color;
+		this.value = value;
+		this.row = row;
+		this.col = col;
+		this.icon = icon;
+		this.moves = 0;
+	}
 }
 
 let model = [];
 const blackPieces = [];
 const whitePieces = [];
+let availableCastling = "KQkq";
+let availableEnPassant = "-";
 
-function initModel() {
-  // 1st row should be white officers
-  let row = [];
+function setModelState(fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w") {
+	model = [];
+	const fenParts = fen.split(" ");
+	const piecePlacement = fenParts[0];
+	moveCounter =
+		fenParts.length === 6 && fenParts[5] !== "-" ? parseInt(fenParts[5]) : 0;
+	showMoveCounter();
+	const rows = piecePlacement.split("/");
+	currentPlayer = fenParts[1] === "w" ? "w" : "b";
 
-  const whiteRook1 = new Piece("w", "r", 0, 0, "Chess_pieces/WhiteRook.png");
-  row.push(whiteRook1);
-  whitePieces.push(whiteRook1);
+	for (let i = 7; i >= 0; i--) {
+		const row = [];
+		let j = 0;
+		for (const char of rows[i]) {
+			if (isNaN(char)) {
+				// if char is a piece
+				const color = char.toUpperCase() === char ? "w" : "b";
+				const pieceType = char.toLowerCase();
+				const imagePath = `Chess_pieces/${color.toUpperCase()}${pieceType.toUpperCase()}.png`;
+				const piece = new Piece(color, pieceType, 7 - i, j, imagePath);
+				row.push(piece);
+				if (piece.color === "w") {
+					whitePieces.push(piece);
+				} else {
+					blackPieces.push(piece);
+				}
 
-  const whiteKnight1 = new Piece(
-    "w",
-    "kn",
-    0,
-    1,
-    "Chess_pieces/WhiteKnight.png"
-  );
-  row.push(whiteKnight1);
-  whitePieces.push(whiteKnight1);
+				j++;
+			} else {
+				for (let k = 0; k < parseInt(char); k++) {
+					row.push(new Piece("", "", 7 - i, j, ""));
+					j++;
+				}
+			}
+		}
+		model.push(row);
+	}
 
-  const whiteBishop1 = new Piece(
-    "w",
-    "b",
-    0,
-    2,
-    "Chess_pieces/WhiteBishop.png"
-  );
-  row.push(whiteBishop1);
-  whitePieces.push(whiteBishop1);
-
-  const whiteQueen = new Piece("w", "q", 0, 3, "Chess_pieces/WhiteQueen.png");
-  row.push(whiteQueen);
-  whitePieces.push(whiteQueen);
-  
-  const whiteKing = new Piece("w", "k", 0, 4, "Chess_pieces/WhiteKing.png");
-  row.push(whiteKing);
-  whitePieces.push(whiteKing);
-
-  const whiteBishop2 = new Piece(
-    "w",
-    "b",
-    0,
-    5,
-    "Chess_pieces/WhiteBishop.png"
-  );
-  row.push(whiteBishop2);
-  whitePieces.push(whiteBishop2);
-
-  const whiteKnight2 = new Piece(
-    "w",
-    "kn",
-    0,
-    6,
-    "Chess_pieces/WhiteKnight.png"
-  );
-  row.push(whiteKnight2);
-  whitePieces.push(whiteKnight2);
-
-  const whiteRook2 = new Piece("w", "r", 0, 7, "Chess_pieces/WhiteRook.png");
-  row.push(whiteRook2);
-  whitePieces.push(whiteRook2);
-
-  model.push(row);
-  // Then the white pawns
-  row = [];
-
-  const whitePawn1 = new Piece("w", "p", 1, 0, "Chess_pieces/WhitePawn.png");
-  row.push(whitePawn1);
-  whitePieces.push(whitePawn1);
-
-  const whitePawn2 = new Piece("w", "p", 1, 1, "Chess_pieces/WhitePawn.png");
-  row.push(whitePawn2);
-  whitePieces.push(whitePawn2);
-
-  const whitePawn3 = new Piece("w", "p", 1, 2, "Chess_pieces/WhitePawn.png");
-  row.push(whitePawn3);
-  whitePieces.push(whitePawn3);
-
-  const whitePawn4 = new Piece("w", "p", 1, 3, "Chess_pieces/WhitePawn.png");
-  row.push(whitePawn4);
-  whitePieces.push(whitePawn4);
-
-  const whitePawn5 = new Piece("w", "p", 1, 4, "Chess_pieces/WhitePawn.png");
-  row.push(whitePawn5);
-  whitePieces.push(whitePawn5);
-
-  const whitePawn6 = new Piece("w", "p", 1, 5, "Chess_pieces/WhitePawn.png");
-  row.push(whitePawn6);
-  whitePieces.push(whitePawn6);
-
-  const whitePawn7 = new Piece("w", "p", 1, 6, "Chess_pieces/WhitePawn.png");
-  row.push(whitePawn7);
-  whitePieces.push(whitePawn7);
-
-  const whitePawn8 = new Piece("w", "p", 1, 7, "Chess_pieces/WhitePawn.png");
-  row.push(whitePawn8);
-  whitePieces.push(whitePawn8);
-
-  model.push(row);
-  // Then 4 empty rows
-  for (let i = 0; i < 4; i++) {
-    row = [];
-    for (let j = 0; j < 8; j++) {
-      row.push(new Piece());
-    }
-    model.push(row);
-  }
-  //Black pawns
-  row = [];
-
-  const blackPawn1 = new Piece("b", "p", 6, 0, "Chess_pieces/BlackPawn.png");
-  row.push(blackPawn1);
-  blackPieces.push(blackPawn1);
-
-  const blackPawn2 = new Piece("b", "p", 6, 1, "Chess_pieces/BlackPawn.png");
-  row.push(blackPawn2);
-  blackPieces.push(blackPawn2);
-
-  const blackPawn3 = new Piece("b", "p", 6, 2, "Chess_pieces/BlackPawn.png");
-  row.push(blackPawn3);
-  blackPieces.push(blackPawn3);
-
-  const blackPawn4 = new Piece("b", "p", 6, 3, "Chess_pieces/BlackPawn.png");
-  row.push(blackPawn4);
-  blackPieces.push(blackPawn4);
-
-  const blackPawn5 = new Piece("b", "p", 6, 4, "Chess_pieces/BlackPawn.png");
-  row.push(blackPawn5);
-  blackPieces.push(blackPawn5);
-
-  const blackPawn6 = new Piece("b", "p", 6, 5, "Chess_pieces/BlackPawn.png");
-  row.push(blackPawn6);
-  blackPieces.push(blackPawn6);
-
-  const blackPawn7 = new Piece("b", "p", 6, 6, "Chess_pieces/BlackPawn.png");
-  row.push(blackPawn7);
-  blackPieces.push(blackPawn7);
-
-  const blackPawn8 = new Piece("b", "p", 6, 7, "Chess_pieces/BlackPawn.png");
-  row.push(blackPawn8);
-  blackPieces.push(blackPawn8);
-
-  model.push(row);
-  // Black officers
-  row = [];
-
-  const blackRook1 = new Piece("b", "r", 7, 0, "Chess_pieces/BlackRook.png");
-  row.push(blackRook1);
-  blackPieces.push(blackRook1);
-
-  const blackKnight1 = new Piece(
-    "b",
-    "kn",
-    7,
-    1,
-    "Chess_pieces/BlackKnight.png"
-  );
-  row.push(blackKnight1);
-  blackPieces.push(blackKnight1);
-
-  const blackBishop1 = new Piece(
-    "b",
-    "b",
-    7,
-    2,
-    "Chess_pieces/BlackBishop.png"
-  );
-  row.push(blackBishop1);
-  blackPieces.push(blackBishop1);
-  
-  const blackQueen = new Piece("b", "q", 7, 3, "Chess_pieces/BlackQueen.png");
-  row.push(blackQueen);
-  blackPieces.push(blackQueen);
-  
-    const blackKing = new Piece("b", "k", 7, 4, "Chess_pieces/BlackKing.png");
-    row.push(blackKing);
-    blackPieces.push(blackKing);
-  
-  const blackBishop2 = new Piece(
-    "b",
-    "b",
-    7,
-    5,
-    "Chess_pieces/BlackBishop.png"
-  );
-  row.push(blackBishop2);
-  blackPieces.push(blackBishop2);
-
-  const blackKnight2 = new Piece(
-    "b",
-    "kn",
-    7,
-    6,
-    "Chess_pieces/BlackKnight.png"
-  );
-  row.push(blackKnight2);
-  blackPieces.push(blackKnight2);
-
-  const blackRook2 = new Piece("b", "r", 7, 7, "Chess_pieces/BlackRook.png");
-  row.push(blackRook2);
-  blackPieces.push(blackRook2);
-
-  model.push(row);
+	return model;
 }
 
 let castleMoves = [];
 function getAvailableMoves(piece) {
-  let moves = [];
-  //Find out which piece we want to move
-  switch (piece.value) {
-    case "p":
-      //Check whether pawn is black or white
-      if (piece.color === "b") {
-        //If the move is available, push move to list
-        if (model[piece.row - 1][piece.col].value === "") {
-          moves.push([-1, 0]);
-          // If the pawn haven't been moved, we add an extra move
-          if (
-            piece.moves === 0 &&
-            model[piece.row - 2][piece.col].value === ""
-          ) {
-            moves.push([-2, 0]);
-          }
-        }
-        //If there is an enemy at attacking positions, add them to move list
-        if (
-          piece.col !== 0 &&
-          model[piece.row - 1][piece.col - 1].color === "w"
-        ) {
-          moves.push([-1, -1]);
-        }
-        if (
-          piece.col !== 7 &&
-          model[piece.row - 1][piece.col + 1].color === "w"
-        ) {
-          moves.push([-1, 1]);
-        }
-        //En passant move
-        if (
-          piece.row === 3 &&
-          model[piece.row][piece.col - 1] &&
-          model[piece.row][piece.col - 1].value === "p" &&
-          model[piece.row][piece.col - 1].color === "w" &&
-          model[piece.row][piece.col - 1].moves === 1
-        ) {
-          moves.push([-1, -1]);
-          model.enPassant = true;
-          console.log("Model",model)
-        }
-        if (
-          piece.row === 3 &&
-          model[piece.row][piece.col + 1] &&
-          model[piece.row][piece.col + 1].value === "p" &&
-          model[piece.row][piece.col + 1].color === "w" &&
-          model[piece.row][piece.col + 1].moves === 1
-        ) {
-          moves.push([-1, 1]);
-          model.enPassant = true;
-          console.log("Model", model)
-        }
-        // pawn promotion
-        if (piece.row === 1) {
-          moves = moves.map((move) => {
-            move.push("q");
-            return move;
-          });
-        }
-      } else {
-        //Same as above, but for white pawns
-        if (model[piece.row + 1][piece.col].value === "") {
-          moves.push([1, 0]);
-          if (
-            piece.moves === 0 &&
-            model[piece.row + 2][piece.col].value === ""
-          ) {
-            moves.push([2, 0]);
-          }
-        }
-        if (
-          piece.col !== 0 &&
-          model[piece.row + 1][piece.col - 1].color === "b"
-        ) {
-          moves.push([1, -1]);
-        }
-        if (
-          piece.col !== 7 &&
-          model[piece.row + 1][piece.col + 1].color === "b"
-        ) {
-          moves.push([1, 1]);
-        }
-        //En passant move
-        if (
-          piece.row === 4 &&
-          model[piece.row][piece.col - 1] &&
-          model[piece.row][piece.col - 1].value === "p" &&
-          model[piece.row][piece.col - 1].color === "b" &&
-          model[piece.row][piece.col - 1].moves === 1
-        ) {
-          moves.push([1, -1]);
-        }
-        if (
-          piece.row === 4 &&
-          model[piece.row][piece.col + 1] &&
-          model[piece.row][piece.col + 1].value === "p" &&
-          model[piece.row][piece.col + 1].color === "b" &&
-          model[piece.row][piece.col + 1].moves === 1
-        ) {
-          moves.push([1, 1]);
-        }
-        // pawn promotion
-        if (piece.row === 6) {
-          moves = moves.map((move) => {
-            move.push("q");
-            return move;
-          });
-        }
-      }
-      break;
-    case "r": {
-      //Add all north moves
-      let rowCounter = 0;
-      let colCounter = 0;
-      while (
-        rowCounter + piece.row < 7 &&
-        model[piece.row + rowCounter + 1][piece.col + colCounter].value === ""
-      ) {
-        rowCounter++;
-        moves.push([rowCounter, colCounter]);
-      }
-      if (
-        piece.row + rowCounter != 7 &&
-        model[piece.row + rowCounter + 1][piece.col + colCounter].color !==
-          "" &&
-        model[piece.row + rowCounter + 1][piece.col + colCounter].color !==
-          piece.color
-      ) {
-        moves.push([rowCounter + 1, colCounter]);
-      }
-      //Add all west moves
-      rowCounter = 0;
-      colCounter = 0;
-      while (
-        colCounter + piece.col > 0 &&
-        model[piece.row + rowCounter][piece.col + colCounter - 1].value === ""
-      ) {
-        colCounter--;
-        moves.push([rowCounter, colCounter]);
-      }
-      if (
-        piece.col + colCounter != 0 &&
-        model[piece.row + rowCounter][piece.col + colCounter - 1].color !==
-          "" &&
-        model[piece.row + rowCounter][piece.col + colCounter - 1].color !==
-          piece.color
-      ) {
-        moves.push([rowCounter, colCounter - 1]);
-      }
-      //Add all south moves
-      rowCounter = 0;
-      colCounter = 0;
-      while (
-        rowCounter + piece.row > 0 &&
-        model[piece.row + rowCounter - 1][piece.col + colCounter].value === ""
-      ) {
-        rowCounter--;
-        moves.push([rowCounter, colCounter]);
-      }
-      if (
-        piece.row + rowCounter != 0 &&
-        model[piece.row + rowCounter - 1][piece.col + colCounter].color !==
-          "" &&
-        model[piece.row + rowCounter - 1][piece.col + colCounter].color !==
-          piece.color
-      ) {
-        moves.push([rowCounter - 1, colCounter]);
-      }
-      //Add all east moves
-      rowCounter = 0;
-      colCounter = 0;
-      while (
-        colCounter + piece.col < 7 &&
-        model[piece.row + rowCounter][piece.col + colCounter + 1].value === ""
-      ) {
-        colCounter++;
-        moves.push([rowCounter, colCounter]);
-      }
-      if (
-        piece.col + colCounter != 7 &&
-        model[piece.row + rowCounter][piece.col + colCounter + 1].color !==
-          "" &&
-        model[piece.row + rowCounter][piece.col + colCounter + 1].color !==
-          piece.color
-      ) {
-        moves.push([rowCounter, colCounter + 1]);
-      }
-      break;
-    }
-    case "kn": {
-      // All available knight moves
-      const offsets = [
-        [-2, -1],
-        [-2, 1],
-        [-1, -2],
-        [-1, 2],
-        [1, -2],
-        [1, 2],
-        [2, -1],
-        [2, 1],
-      ];
-      //Check whether each move is valid
-      offsets.forEach((offset) => {
-        const newRow = piece.row + offset[0];
-        const newCol = piece.col + offset[1];
+	let moves = [];
+	//Find out which piece we want to move
+	switch (piece.value) {
+		case "p":
+			//Check whether pawn is black or white
+			if (piece.color === "b") {
+				//If the move is available, push move to list
+				if (model[piece.row - 1][piece.col].value === "") {
+					moves.push([-1, 0]);
+					// If the pawn haven't been moved, we add an extra move
+					if (
+						piece.row === 6 &&
+						piece.moves === 0 &&
+						model[piece.row - 2][piece.col].value === ""
+					) {
+						moves.push([-2, 0]);
+					}
+				}
+				//If there is an enemy at attacking positions, add them to move list
+				if (
+					piece.col !== 0 &&
+					model[piece.row - 1][piece.col - 1].color === "w"
+				) {
+					moves.push([-1, -1]);
+				}
+				if (
+					piece.col !== 7 &&
+					model[piece.row - 1][piece.col + 1].color === "w"
+				) {
+					moves.push([-1, 1]);
+				}
+				// en passant
+				if (availableEnPassant != "-") {
+					let coord = getCoordFromPositionString(availableEnPassant);
+					let passantRow = coord.row;
+					let passantCol = coord.col;
+					if (passantRow === piece.row - 1 && passantCol === piece.col - 1) {
+						moves.push([-1, -1]);
+					} else if (
+						passantRow === piece.row - 1 &&
+						passantCol === piece.col + 1
+					) {
+						moves.push([-1, 1]);
+					}
+				}
+				// pawn promotion
+				if (piece.row === 1) {
+					moves = moves.map((move) => {
+						move.push("q");
+						return move;
+					});
+				}
+			} else {
+				//Same as above, but for white pawns
+				if (model[piece.row + 1][piece.col].value === "") {
+					moves.push([1, 0]);
+					if (
+						piece.row === 1 &&
+						piece.moves === 0 &&
+						model[piece.row + 2][piece.col].value === ""
+					) {
+						moves.push([2, 0]);
+					}
+				}
+				if (
+					piece.col !== 0 &&
+					model[piece.row + 1][piece.col - 1].color === "b"
+				) {
+					moves.push([1, -1]);
+				}
+				if (
+					piece.col !== 7 &&
+					model[piece.row + 1][piece.col + 1].color === "b"
+				) {
+					moves.push([1, 1]);
+				}
+				// en passant
+				if (availableEnPassant != "-") {
+					let coord = getCoordFromPositionString(availableEnPassant);
+					let passantRow = coord.row;
+					let passantCol = coord.col;
+					if (passantRow === piece.row + 1 && passantCol === piece.col - 1) {
+						moves.push([1, -1]);
+					} else if (
+						passantRow === piece.row + 1 &&
+						passantCol === piece.col + 1
+					) {
+						moves.push([1, 1]);
+					}
+				}
+				// pawn promotion
+				if (piece.row === 6) {
+					moves = moves.map((move) => {
+						move.push("q");
+						return move;
+					});
+				}
+			}
+			break;
+		case "r": {
+			//Add all north moves
+			let rowCounter = 0;
+			let colCounter = 0;
+			while (
+				rowCounter + piece.row < 7 &&
+				model[piece.row + rowCounter + 1][piece.col + colCounter].value === ""
+			) {
+				rowCounter++;
+				moves.push([rowCounter, colCounter]);
+			}
+			if (
+				piece.row + rowCounter != 7 &&
+				model[piece.row + rowCounter + 1][piece.col + colCounter].color !==
+					"" &&
+				model[piece.row + rowCounter + 1][piece.col + colCounter].color !==
+					piece.color
+			) {
+				moves.push([rowCounter + 1, colCounter]);
+			}
+			//Add all west moves
+			rowCounter = 0;
+			colCounter = 0;
+			while (
+				colCounter + piece.col > 0 &&
+				model[piece.row + rowCounter][piece.col + colCounter - 1].value === ""
+			) {
+				colCounter--;
+				moves.push([rowCounter, colCounter]);
+			}
+			if (
+				piece.col + colCounter != 0 &&
+				model[piece.row + rowCounter][piece.col + colCounter - 1].color !==
+					"" &&
+				model[piece.row + rowCounter][piece.col + colCounter - 1].color !==
+					piece.color
+			) {
+				moves.push([rowCounter, colCounter - 1]);
+			}
+			//Add all south moves
+			rowCounter = 0;
+			colCounter = 0;
+			while (
+				rowCounter + piece.row > 0 &&
+				model[piece.row + rowCounter - 1][piece.col + colCounter].value === ""
+			) {
+				rowCounter--;
+				moves.push([rowCounter, colCounter]);
+			}
+			if (
+				piece.row + rowCounter != 0 &&
+				model[piece.row + rowCounter - 1][piece.col + colCounter].color !==
+					"" &&
+				model[piece.row + rowCounter - 1][piece.col + colCounter].color !==
+					piece.color
+			) {
+				moves.push([rowCounter - 1, colCounter]);
+			}
+			//Add all east moves
+			rowCounter = 0;
+			colCounter = 0;
+			while (
+				colCounter + piece.col < 7 &&
+				model[piece.row + rowCounter][piece.col + colCounter + 1].value === ""
+			) {
+				colCounter++;
+				moves.push([rowCounter, colCounter]);
+			}
+			if (
+				piece.col + colCounter != 7 &&
+				model[piece.row + rowCounter][piece.col + colCounter + 1].color !==
+					"" &&
+				model[piece.row + rowCounter][piece.col + colCounter + 1].color !==
+					piece.color
+			) {
+				moves.push([rowCounter, colCounter + 1]);
+			}
+			break;
+		}
+		case "n": {
+			// All available knight moves
+			const offsets = [
+				[-2, -1],
+				[-2, 1],
+				[-1, -2],
+				[-1, 2],
+				[1, -2],
+				[1, 2],
+				[2, -1],
+				[2, 1],
+			];
+			//Check whether each move is valid
+			offsets.forEach((offset) => {
+				const newRow = piece.row + offset[0];
+				const newCol = piece.col + offset[1];
 
-        if (
-          newRow >= 0 &&
-          newRow <= 7 &&
-          newCol >= 0 &&
-          newCol <= 7 &&
-          (model[newRow][newCol].value === "" ||
-            (model[newRow][newCol].color !== "" &&
-              model[newRow][newCol].color !== piece.color))
-        ) {
-          moves.push([offset[0], offset[1]]);
-        }
-      });
+				if (
+					newRow >= 0 &&
+					newRow <= 7 &&
+					newCol >= 0 &&
+					newCol <= 7 &&
+					(model[newRow][newCol].value === "" ||
+						(model[newRow][newCol].color !== "" &&
+							model[newRow][newCol].color !== piece.color))
+				) {
+					moves.push([offset[0], offset[1]]);
+				}
+			});
 
-      break;
-    }
-    case "b": {
-      //This has same logic as rook, but just diagonally
-      let rowCounter = 0;
-      let colCounter = 0;
-      while (
-        rowCounter + piece.row < 7 &&
-        colCounter + piece.col < 7 &&
-        model[piece.row + rowCounter + 1][piece.col + colCounter + 1].value ===
-          ""
-      ) {
-        rowCounter++;
-        colCounter++;
-        moves.push([rowCounter, colCounter]);
-      }
-      if (
-        piece.row + rowCounter != 7 &&
-        piece.col + colCounter != 7 &&
-        model[piece.row + rowCounter + 1][piece.col + colCounter + 1].color !==
-          "" &&
-        model[piece.row + rowCounter + 1][piece.col + colCounter + 1].color !==
-          piece.color
-      ) {
-        moves.push([rowCounter + 1, colCounter + 1]);
-      }
-      rowCounter = 0;
-      colCounter = 0;
-      while (
-        rowCounter + piece.row < 7 &&
-        colCounter + piece.col > 0 &&
-        model[piece.row + rowCounter + 1][piece.col + colCounter - 1].value ===
-          ""
-      ) {
-        rowCounter++;
-        colCounter--;
-        moves.push([rowCounter, colCounter]);
-      }
-      if (
-        piece.row + rowCounter != 7 &&
-        piece.col + colCounter != 0 &&
-        model[piece.row + rowCounter + 1][piece.col + colCounter - 1].color !==
-          "" &&
-        model[piece.row + rowCounter + 1][piece.col + colCounter - 1].color !==
-          piece.color
-      ) {
-        moves.push([rowCounter + 1, colCounter - 1]);
-      }
-      rowCounter = 0;
-      colCounter = 0;
-      while (
-        rowCounter + piece.row > 0 &&
-        colCounter + piece.col > 0 &&
-        model[piece.row + rowCounter - 1][piece.col + colCounter - 1].value ===
-          ""
-      ) {
-        rowCounter--;
-        colCounter--;
-        moves.push([rowCounter, colCounter]);
-      }
-      if (
-        piece.row + rowCounter != 0 &&
-        piece.col + colCounter != 0 &&
-        model[piece.row + rowCounter - 1][piece.col + colCounter - 1].color !==
-          "" &&
-        model[piece.row + rowCounter - 1][piece.col + colCounter - 1].color !==
-          piece.color
-      ) {
-        moves.push([rowCounter - 1, colCounter - 1]);
-      }
-      rowCounter = 0;
-      colCounter = 0;
-      while (
-        rowCounter + piece.row > 0 &&
-        colCounter + piece.col < 7 &&
-        model[piece.row + rowCounter - 1][piece.col + colCounter + 1].value ===
-          ""
-      ) {
-        rowCounter--;
-        colCounter++;
-        moves.push([rowCounter, colCounter]);
-      }
-      if (
-        piece.row + rowCounter != 0 &&
-        piece.col + colCounter != 7 &&
-        model[piece.row + rowCounter - 1][piece.col + colCounter + 1].color !==
-          "" &&
-        model[piece.row + rowCounter - 1][piece.col + colCounter + 1].color !==
-          piece.color
-      ) {
-        moves.push([rowCounter - 1, colCounter + 1]);
-      }
-      break;
-    }
-    case "k": {
-      //All available king moves
-      const offsets = [
-        [0, -1],
-        [1, -1],
-        [1, 0],
-        [1, 1],
-        [0, 1],
-        [-1, 1],
-        [-1, 0],
-        [-1, -1],
-      ];
-      //Check if each move is valid
-      offsets.forEach((offset) => {
-        const newRow = piece.row + offset[0];
-        const newCol = piece.col + offset[1];
+			break;
+		}
+		case "b": {
+			//This has same logic as rook, but just diagonally
+			let rowCounter = 0;
+			let colCounter = 0;
+			while (
+				rowCounter + piece.row < 7 &&
+				colCounter + piece.col < 7 &&
+				model[piece.row + rowCounter + 1][piece.col + colCounter + 1].value ===
+					""
+			) {
+				rowCounter++;
+				colCounter++;
+				moves.push([rowCounter, colCounter]);
+			}
+			if (
+				piece.row + rowCounter != 7 &&
+				piece.col + colCounter != 7 &&
+				model[piece.row + rowCounter + 1][piece.col + colCounter + 1].color !==
+					"" &&
+				model[piece.row + rowCounter + 1][piece.col + colCounter + 1].color !==
+					piece.color
+			) {
+				moves.push([rowCounter + 1, colCounter + 1]);
+			}
+			rowCounter = 0;
+			colCounter = 0;
+			while (
+				rowCounter + piece.row < 7 &&
+				colCounter + piece.col > 0 &&
+				model[piece.row + rowCounter + 1][piece.col + colCounter - 1].value ===
+					""
+			) {
+				rowCounter++;
+				colCounter--;
+				moves.push([rowCounter, colCounter]);
+			}
+			if (
+				piece.row + rowCounter != 7 &&
+				piece.col + colCounter != 0 &&
+				model[piece.row + rowCounter + 1][piece.col + colCounter - 1].color !==
+					"" &&
+				model[piece.row + rowCounter + 1][piece.col + colCounter - 1].color !==
+					piece.color
+			) {
+				moves.push([rowCounter + 1, colCounter - 1]);
+			}
+			rowCounter = 0;
+			colCounter = 0;
+			while (
+				rowCounter + piece.row > 0 &&
+				colCounter + piece.col > 0 &&
+				model[piece.row + rowCounter - 1][piece.col + colCounter - 1].value ===
+					""
+			) {
+				rowCounter--;
+				colCounter--;
+				moves.push([rowCounter, colCounter]);
+			}
+			if (
+				piece.row + rowCounter != 0 &&
+				piece.col + colCounter != 0 &&
+				model[piece.row + rowCounter - 1][piece.col + colCounter - 1].color !==
+					"" &&
+				model[piece.row + rowCounter - 1][piece.col + colCounter - 1].color !==
+					piece.color
+			) {
+				moves.push([rowCounter - 1, colCounter - 1]);
+			}
+			rowCounter = 0;
+			colCounter = 0;
+			while (
+				rowCounter + piece.row > 0 &&
+				colCounter + piece.col < 7 &&
+				model[piece.row + rowCounter - 1][piece.col + colCounter + 1].value ===
+					""
+			) {
+				rowCounter--;
+				colCounter++;
+				moves.push([rowCounter, colCounter]);
+			}
+			if (
+				piece.row + rowCounter != 0 &&
+				piece.col + colCounter != 7 &&
+				model[piece.row + rowCounter - 1][piece.col + colCounter + 1].color !==
+					"" &&
+				model[piece.row + rowCounter - 1][piece.col + colCounter + 1].color !==
+					piece.color
+			) {
+				moves.push([rowCounter - 1, colCounter + 1]);
+			}
+			break;
+		}
+		case "k": {
+			//All available king moves
+			const offsets = [
+				[0, -1],
+				[1, -1],
+				[1, 0],
+				[1, 1],
+				[0, 1],
+				[-1, 1],
+				[-1, 0],
+				[-1, -1],
+			];
+			//Check if each move is valid
+			offsets.forEach((offset) => {
+				const newRow = piece.row + offset[0];
+				const newCol = piece.col + offset[1];
 
-        if (
-          newRow >= 0 &&
-          newRow <= 7 &&
-          newCol >= 0 &&
-          newCol <= 7 &&
-          (model[newRow][newCol].value === "" ||
-            (model[newRow][newCol].color !== "" &&
-              model[newRow][newCol].color !== piece.color))
-        ) {
-          moves.push([offset[0], offset[1]]);
-        }
-      });
-      // castling move check rook as well
-      if (piece.moves === 0) {
-        if (
-          model[piece.row][0].moves === 0 &&
-          model[piece.row][1].value === "" &&
-          model[piece.row][2].value === "" &&
-          model[piece.row][3].value === ""
-        ) {
-          moves.push([0, -2]);
-          if (piece.color === "w") {
-            castleMoves.push("wQ");
-          } else {
-            castleMoves.push("bq");
-          }
-        }
-        if (
-          model[piece.row][7].moves === 0 &&
-          model[piece.row][6].value === "" &&
-          model[piece.row][5].value === ""
-        ) {
-          moves.push([0, 2]);
-          if (piece.color === "w") {
-            castleMoves.push("wK");
-          } else {
-            castleMoves.push("bk");
-          }
-        }
-      }
-      console.log(castleMoves);
-      break;
-    }
-    case "q": {
-      //Just a combination of rooks and bishops code
-      let rowCounter = 0;
-      let colCounter = 0;
-      while (
-        rowCounter + piece.row < 7 &&
-        model[piece.row + rowCounter + 1][piece.col + colCounter].value === ""
-      ) {
-        rowCounter++;
-        moves.push([rowCounter, colCounter]);
-      }
-      if (
-        piece.row + rowCounter != 7 &&
-        model[piece.row + rowCounter + 1][piece.col + colCounter].color !==
-          "" &&
-        model[piece.row + rowCounter + 1][piece.col + colCounter].color !==
-          piece.color
-      ) {
-        moves.push([rowCounter + 1, colCounter]);
-      }
-      rowCounter = 0;
-      colCounter = 0;
-      while (
-        colCounter + piece.col > 0 &&
-        model[piece.row + rowCounter][piece.col + colCounter - 1].value === ""
-      ) {
-        colCounter--;
-        moves.push([rowCounter, colCounter]);
-      }
-      if (
-        piece.col + colCounter != 0 &&
-        model[piece.row + rowCounter][piece.col + colCounter - 1].color !==
-          "" &&
-        model[piece.row + rowCounter][piece.col + colCounter - 1].color !==
-          piece.color
-      ) {
-        moves.push([rowCounter, colCounter - 1]);
-      }
-      rowCounter = 0;
-      colCounter = 0;
-      while (
-        rowCounter + piece.row > 0 &&
-        model[piece.row + rowCounter - 1][piece.col + colCounter].value === ""
-      ) {
-        rowCounter--;
-        moves.push([rowCounter, colCounter]);
-      }
-      if (
-        piece.row + rowCounter != 0 &&
-        model[piece.row + rowCounter - 1][piece.col + colCounter].color !==
-          "" &&
-        model[piece.row + rowCounter - 1][piece.col + colCounter].color !==
-          piece.color
-      ) {
-        moves.push([rowCounter - 1, colCounter]);
-      }
-      rowCounter = 0;
-      colCounter = 0;
-      while (
-        colCounter + piece.col < 7 &&
-        model[piece.row + rowCounter][piece.col + colCounter + 1].value === ""
-      ) {
-        colCounter++;
-        moves.push([rowCounter, colCounter]);
-      }
-      if (
-        piece.col + colCounter != 7 &&
-        model[piece.row + rowCounter][piece.col + colCounter + 1].color !==
-          "" &&
-        model[piece.row + rowCounter][piece.col + colCounter + 1].color !==
-          piece.color
-      ) {
-        moves.push([rowCounter, colCounter + 1]);
-      }
-      rowCounter = 0;
-      colCounter = 0;
-      while (
-        rowCounter + piece.row < 7 &&
-        colCounter + piece.col < 7 &&
-        model[piece.row + rowCounter + 1][piece.col + colCounter + 1].value ===
-          ""
-      ) {
-        rowCounter++;
-        colCounter++;
-        moves.push([rowCounter, colCounter]);
-      }
-      if (
-        piece.row + rowCounter != 7 &&
-        piece.col + colCounter != 7 &&
-        model[piece.row + rowCounter + 1][piece.col + colCounter + 1].color !==
-          "" &&
-        model[piece.row + rowCounter + 1][piece.col + colCounter + 1].color !==
-          piece.color
-      ) {
-        moves.push([rowCounter + 1, colCounter + 1]);
-      }
-      rowCounter = 0;
-      colCounter = 0;
-      while (
-        rowCounter + piece.row < 7 &&
-        colCounter + piece.col > 0 &&
-        model[piece.row + rowCounter + 1][piece.col + colCounter - 1].value ===
-          ""
-      ) {
-        rowCounter++;
-        colCounter--;
-        moves.push([rowCounter, colCounter]);
-      }
-      if (
-        piece.row + rowCounter != 7 &&
-        piece.col + colCounter != 0 &&
-        model[piece.row + rowCounter + 1][piece.col + colCounter - 1].color !==
-          "" &&
-        model[piece.row + rowCounter + 1][piece.col + colCounter - 1].color !==
-          piece.color
-      ) {
-        moves.push([rowCounter + 1, colCounter - 1]);
-      }
-      rowCounter = 0;
-      colCounter = 0;
-      while (
-        rowCounter + piece.row > 0 &&
-        colCounter + piece.col > 0 &&
-        model[piece.row + rowCounter - 1][piece.col + colCounter - 1].value ===
-          ""
-      ) {
-        rowCounter--;
-        colCounter--;
-        moves.push([rowCounter, colCounter]);
-      }
-      if (
-        piece.row + rowCounter != 0 &&
-        piece.col + colCounter != 0 &&
-        model[piece.row + rowCounter - 1][piece.col + colCounter - 1].color !==
-          "" &&
-        model[piece.row + rowCounter - 1][piece.col + colCounter - 1].color !==
-          piece.color
-      ) {
-        moves.push([rowCounter - 1, colCounter - 1]);
-      }
-      rowCounter = 0;
-      colCounter = 0;
-      while (
-        rowCounter + piece.row > 0 &&
-        colCounter + piece.col < 7 &&
-        model[piece.row + rowCounter - 1][piece.col + colCounter + 1].value ===
-          ""
-      ) {
-        rowCounter--;
-        colCounter++;
-        moves.push([rowCounter, colCounter]);
-      }
-      if (
-        piece.row + rowCounter != 0 &&
-        piece.col + colCounter != 7 &&
-        model[piece.row + rowCounter - 1][piece.col + colCounter + 1].color !==
-          "" &&
-        model[piece.row + rowCounter - 1][piece.col + colCounter + 1].color !==
-          piece.color
-      ) {
-        moves.push([rowCounter - 1, colCounter + 1]);
-      }
-      break;
-    }
-  }
-  //Convert relative moves to acutal indexes
-  moves = moves.map((move) => {
-    move[0] += piece.row;
-    move[1] += piece.col;
-    return move;
-  });
-  return moves;
+				if (
+					newRow >= 0 &&
+					newRow <= 7 &&
+					newCol >= 0 &&
+					newCol <= 7 &&
+					(model[newRow][newCol].value === "" ||
+						(model[newRow][newCol].color !== "" &&
+							model[newRow][newCol].color !== piece.color))
+				) {
+					moves.push([offset[0], offset[1]]);
+				}
+			});
+			// castling move check rook as well
+			if (piece.moves === 0) {
+				if (
+					model[piece.row][0].moves === 0 &&
+					model[piece.row][1].value === "" &&
+					model[piece.row][2].value === "" &&
+					model[piece.row][3].value === ""
+				) {
+					moves.push([0, -2]);
+					if (piece.color === "w") {
+						castleMoves.push("wQ");
+					} else {
+						castleMoves.push("bq");
+					}
+				}
+				if (
+					model[piece.row][7].moves === 0 &&
+					model[piece.row][6].value === "" &&
+					model[piece.row][5].value === ""
+				) {
+					moves.push([0, 2]);
+					if (piece.color === "w") {
+						castleMoves.push("wK");
+					} else {
+						castleMoves.push("bk");
+					}
+				}
+			}
+			console.log(castleMoves);
+			break;
+		}
+		case "q": {
+			//Just a combination of rooks and bishops code
+			let rowCounter = 0;
+			let colCounter = 0;
+			while (
+				rowCounter + piece.row < 7 &&
+				model[piece.row + rowCounter + 1][piece.col + colCounter].value === ""
+			) {
+				rowCounter++;
+				moves.push([rowCounter, colCounter]);
+			}
+			if (
+				piece.row + rowCounter != 7 &&
+				model[piece.row + rowCounter + 1][piece.col + colCounter].color !==
+					"" &&
+				model[piece.row + rowCounter + 1][piece.col + colCounter].color !==
+					piece.color
+			) {
+				moves.push([rowCounter + 1, colCounter]);
+			}
+			rowCounter = 0;
+			colCounter = 0;
+			while (
+				colCounter + piece.col > 0 &&
+				model[piece.row + rowCounter][piece.col + colCounter - 1].value === ""
+			) {
+				colCounter--;
+				moves.push([rowCounter, colCounter]);
+			}
+			if (
+				piece.col + colCounter != 0 &&
+				model[piece.row + rowCounter][piece.col + colCounter - 1].color !==
+					"" &&
+				model[piece.row + rowCounter][piece.col + colCounter - 1].color !==
+					piece.color
+			) {
+				moves.push([rowCounter, colCounter - 1]);
+			}
+			rowCounter = 0;
+			colCounter = 0;
+			while (
+				rowCounter + piece.row > 0 &&
+				model[piece.row + rowCounter - 1][piece.col + colCounter].value === ""
+			) {
+				rowCounter--;
+				moves.push([rowCounter, colCounter]);
+			}
+			if (
+				piece.row + rowCounter != 0 &&
+				model[piece.row + rowCounter - 1][piece.col + colCounter].color !==
+					"" &&
+				model[piece.row + rowCounter - 1][piece.col + colCounter].color !==
+					piece.color
+			) {
+				moves.push([rowCounter - 1, colCounter]);
+			}
+			rowCounter = 0;
+			colCounter = 0;
+			while (
+				colCounter + piece.col < 7 &&
+				model[piece.row + rowCounter][piece.col + colCounter + 1].value === ""
+			) {
+				colCounter++;
+				moves.push([rowCounter, colCounter]);
+			}
+			if (
+				piece.col + colCounter != 7 &&
+				model[piece.row + rowCounter][piece.col + colCounter + 1].color !==
+					"" &&
+				model[piece.row + rowCounter][piece.col + colCounter + 1].color !==
+					piece.color
+			) {
+				moves.push([rowCounter, colCounter + 1]);
+			}
+			rowCounter = 0;
+			colCounter = 0;
+			while (
+				rowCounter + piece.row < 7 &&
+				colCounter + piece.col < 7 &&
+				model[piece.row + rowCounter + 1][piece.col + colCounter + 1].value ===
+					""
+			) {
+				rowCounter++;
+				colCounter++;
+				moves.push([rowCounter, colCounter]);
+			}
+			if (
+				piece.row + rowCounter != 7 &&
+				piece.col + colCounter != 7 &&
+				model[piece.row + rowCounter + 1][piece.col + colCounter + 1].color !==
+					"" &&
+				model[piece.row + rowCounter + 1][piece.col + colCounter + 1].color !==
+					piece.color
+			) {
+				moves.push([rowCounter + 1, colCounter + 1]);
+			}
+			rowCounter = 0;
+			colCounter = 0;
+			while (
+				rowCounter + piece.row < 7 &&
+				colCounter + piece.col > 0 &&
+				model[piece.row + rowCounter + 1][piece.col + colCounter - 1].value ===
+					""
+			) {
+				rowCounter++;
+				colCounter--;
+				moves.push([rowCounter, colCounter]);
+			}
+			if (
+				piece.row + rowCounter != 7 &&
+				piece.col + colCounter != 0 &&
+				model[piece.row + rowCounter + 1][piece.col + colCounter - 1].color !==
+					"" &&
+				model[piece.row + rowCounter + 1][piece.col + colCounter - 1].color !==
+					piece.color
+			) {
+				moves.push([rowCounter + 1, colCounter - 1]);
+			}
+			rowCounter = 0;
+			colCounter = 0;
+			while (
+				rowCounter + piece.row > 0 &&
+				colCounter + piece.col > 0 &&
+				model[piece.row + rowCounter - 1][piece.col + colCounter - 1].value ===
+					""
+			) {
+				rowCounter--;
+				colCounter--;
+				moves.push([rowCounter, colCounter]);
+			}
+			if (
+				piece.row + rowCounter != 0 &&
+				piece.col + colCounter != 0 &&
+				model[piece.row + rowCounter - 1][piece.col + colCounter - 1].color !==
+					"" &&
+				model[piece.row + rowCounter - 1][piece.col + colCounter - 1].color !==
+					piece.color
+			) {
+				moves.push([rowCounter - 1, colCounter - 1]);
+			}
+			rowCounter = 0;
+			colCounter = 0;
+			while (
+				rowCounter + piece.row > 0 &&
+				colCounter + piece.col < 7 &&
+				model[piece.row + rowCounter - 1][piece.col + colCounter + 1].value ===
+					""
+			) {
+				rowCounter--;
+				colCounter++;
+				moves.push([rowCounter, colCounter]);
+			}
+			if (
+				piece.row + rowCounter != 0 &&
+				piece.col + colCounter != 7 &&
+				model[piece.row + rowCounter - 1][piece.col + colCounter + 1].color !==
+					"" &&
+				model[piece.row + rowCounter - 1][piece.col + colCounter + 1].color !==
+					piece.color
+			) {
+				moves.push([rowCounter - 1, colCounter + 1]);
+			}
+			break;
+		}
+	}
+	//Convert relative moves to acutal indexes
+	moves = moves.map((move) => {
+		move[0] += piece.row;
+		move[1] += piece.col;
+		return move;
+	});
+	return moves;
 }
 
-function movePieceInModel(piece, cell) {
-  //Get index from cell
-  const index = cell.getAttribute("data-index");
-  //Make a copy of the current model
-  const modelCpy = model.map((element) => ({ ...element }));
+function getCoordFromPositionString(positionString) {
+	const col = positionString.charCodeAt(0) - 97;
+	const row = parseInt(positionString.split("")[1] - 1);
+	return { row, col };
+}
 
-  const targetPiece = model[Math.floor(index / 8)][index % 8];
-  if (targetPiece.value !== "") {
-    updateCapturedPieces(piece, targetPiece);
-  }
-  //Remove piece from it's current position
-  modelCpy[piece.row][piece.col] = new Piece();
-  //Update piece attributes
-  piece.row = Math.floor(index / 8);
-  piece.col = index % 8;
-  //Add piece to it's new position, based on the updated attributes
-  modelCpy[piece.row][piece.col] = piece;
-  //Update the real model
-  model = modelCpy.map((element) => ({ ...element }));
-  //Add a move to the piece
-  piece.moves++;
-  // pawn promotion
-  if (piece.value === "p" && (piece.row === 0 || piece.row === 7)) {
-    model[piece.row][piece.col].value = "q";
-    if (piece.row === 0) {
-      model[piece.row][piece.col].icon = "/Chess_pieces/BlackQueen.png";
-    } else {
-      model[piece.row][piece.col].icon = "/Chess_pieces/WhiteQueen.png";
-    }
-  }
-  // castling move. check castleMoves array for which rook to move
-  // the big and small letters does the same, but indicate different color. consider deleting later.
-  if (castleMoves.includes("bq")) {
-    model[piece.row][3] = model[piece.row][0];
-    model[piece.row][0] = new Piece();
-  }
-  if (castleMoves.includes("wQ")) {
-    model[piece.row][3] = model[piece.row][0];
-    model[piece.row][0] = new Piece();
-  }
-  if (castleMoves.includes("bk")) {
-    model[piece.row][5] = model[piece.row][7];
-    model[piece.row][7] = new Piece();
-  }
-  if (castleMoves.includes("wK")) {
-    model[piece.row][5] = model[piece.row][7];
-    model[piece.row][7] = new Piece();
-  }
+function getPositionStringFromCoord(coord) {
+	const row = coord[0];
+	const col = coord[1];
+	let letter = String.fromCharCode(97 + col);
+	return `${letter}${row + 1}`;
+}
 
+function movePieceInModel(piece, index) {
+	availableEnPassant = "-";
+	//Make a copy of the current model
+	const modelCpy = model.map((element) => ({ ...element }));
 
+	const targetPiece = model[Math.floor(index / 8)][index % 8];
+	if (piece.value === "p" && Math.abs(targetPiece.row - piece.row) === 2) {
+		if (piece.color === "w") {
+			availableEnPassant = getPositionStringFromCoord([
+				targetPiece.row - 1,
+				targetPiece.col,
+			]);
+		} else {
+			availableEnPassant = getPositionStringFromCoord([
+				targetPiece.row + 1,
+				targetPiece.col,
+			]);
+		}
+	}
+	if (targetPiece.value !== "") {
+		updateCapturedPieces(piece, targetPiece);
+	}
+	//Remove piece from it's current position
+	modelCpy[piece.row][piece.col] = new Piece();
+	//Update piece attributes
+	piece.row = Math.floor(index / 8);
+	piece.col = index % 8;
+	//Add piece to it's new position, based on the updated attributes
+	modelCpy[piece.row][piece.col] = piece;
+	//Update the real model
+	model = modelCpy.map((element) => ({ ...element }));
+	//Add a move to the piece
+	piece.moves++;
+	// pawn promotion
 
+	if (piece.value === "p") {
+		hasPawnMoved = true;
+	}
 
- 
-  console.log(model);
+	checkIfMoveCounterCriteriaHasBeenFulFilled();
+
+	if (piece.value === "p" && (piece.row === 0 || piece.row === 7)) {
+		model[piece.row][piece.col].value = "q";
+		if (piece.row === 0) {
+			model[piece.row][piece.col].icon = "/Chess_pieces/BQ.png";
+		} else {
+			model[piece.row][piece.col].icon = "/Chess_pieces/WQ.png";
+		}
+	}
+	// castling move. check castleMoves array for which rook to move
+	// the big and small letters does the same, but indicate different color. consider deleting later.
+	console.log(castleMoves, "castleMoves");
+	if (castleMoves.includes("bq")) {
+		model[piece.row][3] = model[piece.row][0];
+		model[piece.row][0] = new Piece();
+	}
+	if (castleMoves.includes("wQ")) {
+		model[piece.row][3] = model[piece.row][0];
+		model[piece.row][0] = new Piece();
+	}
+	if (castleMoves.includes("bk")) {
+		model[piece.row][5] = model[piece.row][7];
+		model[piece.row][7] = new Piece();
+	}
+	if (castleMoves.includes("wK")) {
+		model[piece.row][5] = model[piece.row][7];
+		model[piece.row][7] = new Piece();
+	}
+	//en passant move
+
+	console.log(model);
 }
 
 function checkCheck(piece) {
-  const opponentKing = getKing(currentPlayer === "w" ? "b" : "w");
-  var moves = JSON.stringify(getAvailableMoves(piece));
-  var kingPosition = JSON.stringify([opponentKing.row, opponentKing.col]);
-  if (moves.indexOf(kingPosition) !== -1) {
-    console.log("Checked");
-    return true;
-  }
-  return false;
+	const opponentKing = getKing(currentPlayer === "w" ? "b" : "w");
+	var moves = JSON.stringify(getAvailableMoves(piece));
+	var kingPosition = JSON.stringify([opponentKing.row, opponentKing.col]);
+	if (moves.indexOf(kingPosition) !== -1) {
+		console.log("Checked");
+		return true;
+	}
+	return false;
+}
+
+// Deep copy function for objects
+function deepCopy(obj) {
+	return JSON.parse(JSON.stringify(obj));
 }
 
 function checkMate() {
-  // Check all moves the enemy can make
-  for (let i = 0; i < 8; i++) {
-    for (let j = 0; j < 8; j++) {
-      const piece = model[i][j];
-      if (piece.color !== currentPlayer) {
-        const moves = getAvailableMoves(piece);
-        for (const move of moves) {
-          const targetPiece = model[move[0]][move[1]];
-          // Simulate the move
-          const originalPiece = model[piece.row][piece.col];
-          model[piece.row][piece.col] = new Piece();
-          model[move[0]][move[1]] = piece;
-          piece.row = move[0];
-          piece.col = move[1];
-          // Check if the move removes the check
-          if (!checkCheck(getKing(currentPlayer))) {
-            // Undo the move
-            model[piece.row][piece.col] = originalPiece;
-            model[move[0]][move[1]] = targetPiece;
-            piece.row = i;
-            piece.col = j;
-            return false;
-          }
-          // Undo the move
-          model[piece.row][piece.col] = originalPiece;
-          model[move[0]][move[1]] = targetPiece;
-          piece.row = i;
-          piece.col = j;
-        }
-      }
-    }
-  }
-  return true;
+	// Loop through each enemy piece
+	// If a piece have a move that removes the check, return false
+	// If no piece have a move that removes the check, return true
+	const pieces = getAllPiecesOfColor(currentPlayer === "w" ? "b" : "w");
+	for (let piece of pieces) {
+		const moves = getAvailableMoves(piece);
+		for (const move of moves) {
+			const pieceCpy = deepCopy(piece);
+			const modelCpy = deepCopy(model);
+			movePieceInModel(piece, move[0] * 8 + move[1]);
+			if (!checkIfKingIsChecked(currentPlayer === "w" ? "b" : "w")) {
+				model = modelCpy;
+				piece = pieceCpy;
+				return false;
+			}
+			model = modelCpy;
+			piece = pieceCpy;
+		}
+	}
+	console.log("Checkmate");
+	return true;
+}
+
+function checkIfKingIsChecked(color) {
+	const king = getKing(color);
+	const pieces = getAllPiecesOfColor(color === "w" ? "b" : "w");
+	for (const piece of pieces) {
+		const moves = getAvailableMoves(piece);
+		for (const move of moves) {
+			if (move[0] === king.row && move[1] === king.col) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+function getAllPiecesOfColor(color) {
+	const pieces = [];
+	for (let i = 0; i < 8; i++) {
+		for (let j = 0; j < 8; j++) {
+			if (model[i][j].color === color) {
+				pieces.push(model[i][j]);
+			}
+		}
+	}
+	return pieces;
 }
 
 function getKing(color) {
-  for (let i = 0; i < 8; i++) {
-    for (let j = 0; j < 8; j++) {
-      if (model[i][j].value === "k" && model[i][j].color === color) {
-        return model[i][j];
-      }
-    }
-  }
-}
-
-function checkIfMoveCounterCriteriaHasBeenFulFilled() {
-	if (hasPawnMoved === true && hasPieceBeenCaptured === true) {
-		moveCounter = - 1;
-		hasPawnMoved = false;
-		hasPieceBeenCaptured = false;
+	for (let i = 0; i < 8; i++) {
+		for (let j = 0; j < 8; j++) {
+			if (model[i][j].value === "k" && model[i][j].color === color) {
+				return model[i][j];
+			}
+		}
 	}
 }
 
 function checkIfMoveCounterCriteriaHasBeenFulFilled() {
 	if (hasPawnMoved === true && hasPieceBeenCaptured === true) {
-		moveCounter = - 1;
+		moveCounter = -1;
 		hasPawnMoved = false;
 		hasPieceBeenCaptured = false;
 	}
 }
+function switchTurns() {
+	currentPlayer = currentPlayer === "w" ? "b" : "w";
 
-//#region VIEW
-//#region VIEW
-function updateCapturedPieces(piece, targetPiece) {
-  if (targetPiece) {
-    const capturedPiecesContainer = document.getElementById(
-      targetPiece.color === "w" ? "captured-white" : "captured-black"
-    );
-    const capturedPiece = document.createElement("img");
-    capturedPiece.src = targetPiece.icon;
-    capturedPiece.alt = `${targetPiece.color}_${targetPiece.value}`;
-    capturedPiece.classList.add("captured-piece");
-    capturedPiecesContainer.appendChild(capturedPiece);
-		hasPieceBeenCaptured = true;
-  }
+	const currColor = currentPlayer === "w" ? "white" : "black";
+	const turnElement = document.getElementById("playerTurn");
+	turnElement.textContent = currColor;
+	turnElement.style.color = currColor;
+	turnElement.style.textShadow =
+		currColor === "white"
+			? "2px 2px 4px rgb(150, 150, 150)"
+			: "2px 2px 4px #000000";
 }
 //#endregion
+
+//#region AI
+class GameState {
+	constructor(
+		searchModel,
+		player = currentPlayer,
+		castling = availableCastling,
+		enPassant = availableEnPassant,
+		halfMove = moveCounter,
+		fullMove = fullMoveCounter
+	) {
+		this.searchModel = searchModel;
+		this.player = player;
+		this.castling = castling;
+		this.enPassant = enPassant;
+		this.halfMove = halfMove;
+		this.fullMove = fullMove;
+		this.score = 0;
+	}
+}
+
+let gameState = null;
+
+function initSearchModel() {
+	let searchModel = [];
+	model.forEach((row) => {
+		searchModel.push(
+			row.map((cell) => {
+				if (cell.color === "w") {
+					cell.value = cell.value.toUpperCase();
+				}
+				return cell.value;
+			})
+		);
+	});
+	gameState = new GameState(searchModel);
+}
+
+function getBestMove() {
+	let bestMove = null;
+	initSearchModel();
+	bestMove = alphaBeta(gameState, -Infinity, Infinity, 3, true);
+	return bestMove;
+}
+
+function alphaBeta(game, alpha, beta, depth, isMaximizingPlayer) {
+	// If node is a leaf node, return the static evaluation
+	if (depth === 0) {
+		return staticEvaluation();
+	}
+	// If node is a max node
+	if (isMaximizingPlayer)
+		// While alpha < beta
+		while (alpha < beta) {
+			// Get all children
+			let children = getAllChildrenStates(game, "w");
+			// For each child
+			for (let child of children) {
+				// Value = alphaBeta(child, alpha, beta, depth - 1, false)
+				let value = alphaBeta(child, alpha, beta, depth - 1, false);
+				// alpha = max(alpha, value)
+				alpha = Math.max(alpha, value);
+			}
+			// return alpha
+			return alpha;
+		}
+	// If node is a min node
+	// While alpha < beta
+	else
+		while (alpha < beta) {
+			// Get all children
+			let children = getAllChildrenStates(game, "b");
+			// For each child
+			for (let child of children) {
+				// Value = alphaBeta(child, alpha, beta, depth - 1, true)
+				let value = alphaBeta(child, alpha, beta, depth - 1, true);
+				// beta = min(beta, value)
+				beta = Math.min(beta, value);
+			}
+			// return beta
+			return beta;
+		}
+}
+
+function staticEvaluation(gameState) {
+	const allPieces = gameState.searchModel.flat();
+	let score = 0;
+	allPieces.forEach((piece) => {
+		let pieceValue = 0;
+		switch (piece.toLowerCase()) {
+			case "p":
+				pieceValue += 1;
+				break;
+			case "n":
+				pieceValue += 3;
+				break;
+			case "b":
+				pieceValue += 3;
+				break;
+			case "r":
+				pieceValue += 5;
+				break;
+			case "q":
+				pieceValue += 9;
+				break;
+			case "k":
+				pieceValue += 100;
+				break;
+		}
+		//White maximizes, black minimizes
+		if (piece === piece.toUpperCase()) {
+			score += pieceValue;
+		} else {
+			score -= pieceValue;
+		}
+	});
+	return score;
+}
+
+function getAllChildrenStates(game, color) {
+	let states = [];
+	for (let row = 0; row < 8; row++) {
+		for (let col = 0; col < 8; col++) {
+			if (game.searchModel[row][col].color === color) {
+				const piece = game.searchModel[row][col];
+				const pieceMoves = getMovesForPiece(piece, row, col, game);
+				for (let move of pieceMoves) {
+					let gameCopy = deepCopy(game);
+					movePieceInGame(gameCopy, piece, move[0], move[1]);
+					states.push(gameCopy);
+				}
+			}
+		}
+	}
+	// sorter states efter score
+	return states;
+}
+
+function getMovesForPiece(piece, row, col, game) {
+	let moves = [];
+	switch (piece) {
+		case "p":
+			moves = getPawnMoves();
+			let color = piece === piece.toUpperCase() ? "w" : "b";
+			moves = addPawnAttacks(moves, game, row, col, color);
+			break;
+		case "n":
+			moves = getKnightMoves();
+			break;
+		case "b":
+			moves = getBishopMoves();
+			break;
+		case "r":
+			moves = getRookMoves();
+			break;
+		case "q":
+			moves = getQueenMoves();
+			break;
+		case "k":
+			moves = getKingMoves();
+			break;
+	}
+
+	// add the current position to the moves
+	moves = moves.map((move) => {
+		move[0] += row;
+		move[1] += col;
+		return move;
+	});
+
+	// filter out moves that are out of bounds
+	moves = moves.filter((move) => {
+		return move[0] >= 0 && move[0] <= 7 && move[1] >= 0 && move[1] <= 7;
+	});
+	return moves;
+}
+
+function addPawnAttacks(moves, game, row, col, color) {
+	if (color === "w") {
+		if (checkForEnemy(game, row + 1, col + 1, color)) {
+			moves.add([1, 1]);
+		}
+		if (checkForEnemy(game, row + 1, col - 1, color)) {
+			moves.add([1, -1]);
+		}
+	} else {
+		if (checkForEnemy(game, row - 1, col + 1, color)) {
+			moves.add([-1, 1]);
+		}
+		if (checkForEnemy(game, row - 1, col + 1, color)) {
+			moves.add([-1, -1]);
+		}
+	}
+}
+
+function checkForEnemy(game, row, col, playerColor) {
+	target = game.searchModel[row][col];
+	if (target != "") {
+		let targetColor = target === target.toUpperCase ? "w" : "b";
+		if (targetColor !== playerColor) {
+			return true;
+		}
+	}
+	return false;
+}
+
+function getPawnMoves() {
+	return [
+		[1, 0],
+		[2, 0],
+	];
+}
+function getKnightMoves() {
+	return [
+		[2, 1],
+		[2, -1],
+		[1, 2],
+		[1, -2],
+		[-2, 1],
+		[-2, -1],
+		[-1, 2],
+		[-1, -2],
+	];
+}
+function getBishopMoves() {
+	return [
+		[1, 1],
+		[2, 2],
+		[3, 3],
+		[4, 4],
+		[5, 5],
+		[6, 6],
+		[7, 7],
+		[-1, -1],
+		[-2, -2],
+		[-3, -3],
+		[-4, -4],
+		[-5, -5],
+		[-6, -6],
+		[-7, -7],
+		[1, -1],
+		[2, -2],
+		[3, -3],
+		[4, -4],
+		[5, -5],
+		[6, -6],
+		[7, -7],
+		[-1, 1],
+		[-2, 2],
+		[-3, 3],
+		[-4, 4],
+		[-5, 5],
+		[-6, 6],
+		[-7, 7],
+	];
+}
+function getRookMoves() {
+	return [
+		[1, 0],
+		[2, 0],
+		[3, 0],
+		[4, 0],
+		[5, 0],
+		[6, 0],
+		[7, 0],
+		[-1, 0],
+		[-2, 0],
+		[-3, 0],
+		[-4, 0],
+		[-5, 0],
+		[-6, 0],
+		[-7, 0],
+		[0, 1],
+		[0, 2],
+		[0, 3],
+		[0, 4],
+		[0, 5],
+		[0, 6],
+		[0, 7],
+		[0, -1],
+		[0, -2],
+		[0, -3],
+		[0, -4],
+		[0, -5],
+		[0, -6],
+		[0, -7],
+	];
+}
+function getQueenMoves() {
+	return getRookMoves().concat(getBishopMoves());
+}
+function getKingMoves() {
+	return [
+		[1, 0],
+		[1, 1],
+		[0, 1],
+		[-1, 1],
+		[-1, 0],
+		[-1, -1],
+		[0, -1],
+		[1, -1],
+	];
+}
 
 //#endregion
