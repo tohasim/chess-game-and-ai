@@ -1026,6 +1026,8 @@ class GameState {
 		this.whitePieces = [];
 		this.blackPieces = [];
 		this.lastMove = null;
+		this.whiteKingPosition = null;
+		this.blackKingPosition = null;
 	}
 }
 
@@ -1035,6 +1037,8 @@ function initSearchModel() {
 	let searchModel = [];
 	let whitePieces = [];
 	let blackPieces = [];
+	let whiteKingPosition = null;
+	let blackKingPosition = null;
 	model.forEach((row) => {
 		searchModel.push(
 			row.map((cell) => {
@@ -1042,8 +1046,14 @@ function initSearchModel() {
 				if (cell.color === "w") {
 					value = cell.value.toUpperCase();
 					whitePieces.push({ value: value, row: cell.row, col: cell.col });
+					if (value === "K") {
+						whiteKingPosition = { row: cell.row, col: cell.col };
+					}
 				} else if (cell.color === "b") {
 					blackPieces.push({ value: value, row: cell.row, col: cell.col });
+					if (value === "k") {
+						blackKingPosition = { row: cell.row, col: cell.col };
+					}
 				}
 				return value;
 			})
@@ -1052,20 +1062,62 @@ function initSearchModel() {
 	gameState = new GameState(searchModel);
 	gameState.whitePieces = whitePieces;
 	gameState.blackPieces = blackPieces;
+	gameState.whiteKingPosition = whiteKingPosition;
+	gameState.blackKingPosition = blackKingPosition;
 	gameState.score = staticEvaluation(gameState);
 }
 
 function getBestMove() {
 	let bestMove = null;
 	initSearchModel();
-	bestMove = alphaBeta(gameState, -Infinity, Infinity, 5, false);
+	const startTime = new Date().getTime();
+	const endTime = startTime + 5000;
+	let depth = 1;
+	let maxDepth = 4;
+	while (new Date().getTime() < endTime && depth <= maxDepth) {
+		bestMove = alphaBeta(gameState, -Infinity, Infinity, depth, false);
+		depth++;
+	}
+	console.log(depth - 1);
 	return bestMove.state;
+}
+
+function checkForCheckedKing(game, color) {
+	const kingPosition =
+		color === "w" ? game.whiteKingPosition : game.blackKingPosition;
+	const children = getAllChildrenStates(game, color);
+	for (const child of children) {
+		if (
+			child.searchModel[kingPosition.row][kingPosition.col].toLowerCase() !==
+				"k" &&
+			child.searchModel[kingPosition.row][kingPosition.col] !== ""
+		) {
+			return true;
+		}
+	}
+	return false;
+}
+
+function checkForCheckMate(game, color) {
+	// Check if the king is under attack
+	if (checkForCheckedKing(game, color)) {
+		const children = getAllChildrenStates(game, color);
+		for (const child of children) {
+			if (!checkForCheckedKing(child, color)) {
+				return false;
+			}
+		}
+		return true;
+	}
 }
 
 function alphaBeta(game, alpha, beta, depth, isMaximizingPlayer) {
 	// If node is a leaf node, return the static evaluation
 	if (depth === 0) {
 		return { score: game.score, state: game };
+	}
+	if (checkForCheckedKing(game, isMaximizingPlayer ? "w" : "b")) {
+		return { score: isMaximizingPlayer ? -10000 : 10000, state: game };
 	}
 	// If node is a max node
 	if (isMaximizingPlayer) {
@@ -1115,8 +1167,83 @@ function alphaBeta(game, alpha, beta, depth, isMaximizingPlayer) {
 }
 
 function staticEvaluation(gameState) {
-	const allPieces = gameState.searchModel.flat();
 	let score = 0;
+	score += materialScore(gameState, score);
+	score += positionalScore(gameState, score);
+	return score;
+}
+
+function positionalScore(gameState, score) {
+	const whitePieces = gameState.whitePieces;
+	const blackPieces = gameState.blackPieces;
+	const gamePhase = calculateGamePhase(gameState);
+	whitePieces.forEach((piece) => {
+		score += evaluatePieceSquare(piece.value, piece.row, piece.col, gamePhase);
+	});
+	blackPieces.forEach((piece) => {
+		score += evaluatePieceSquare(piece.value, piece.row, piece.col, gamePhase);
+	});
+	return score;
+}
+
+function calculateGamePhase(gameState) {
+	const allPieces = gameState.searchModel
+		.flat()
+		.map((piece) => piece.toLowerCase());
+	const totalPieces = allPieces.length;
+
+	// Count the number of each type of piece
+	const pieceCounts = {
+		p: 0, // Pawn
+		n: 0, // Knight
+		b: 0, // Bishop
+		r: 0, // Rook
+		q: 0, // Queen
+	};
+
+	allPieces.forEach((piece) => {
+		if (pieceCounts.hasOwnProperty(piece)) {
+			pieceCounts[piece]++;
+		}
+	});
+
+	// Determine the game phase based on the number of pieces left
+	if (totalPieces <= 10) {
+		// Endgame phase
+		return "endgame";
+	} else if (
+		totalPieces <= 20 ||
+		(pieceCounts["q"] === 0 && pieceCounts["r"] === 0)
+	) {
+		// Middlegame phase
+		return "middlegame";
+	} else {
+		// Opening phase
+		return "opening";
+	}
+}
+
+function evaluatePieceSquare(piece, row, col, gamePhase) {
+	switch (piece.toLowerCase()) {
+		case "p":
+			return evaluatePawnSquare(piece, row, col);
+		case "n":
+			return evaluateKnightSquare(piece, row, col);
+		case "b":
+			return evaluateBishopSquare(piece, row, col);
+		case "r":
+			return evaluateRookSquare(piece, row, col);
+		case "q":
+			return evaluateQueenSquare(piece, row, col);
+		case "k":
+			return evaluateKingSquare(piece, row, col, gamePhase);
+		default:
+			return 0; // Default value if the piece is not recognized
+	}
+}
+
+function materialScore(gameState, score) {
+	let allPieces = gameState.searchModel.flat();
 	allPieces.forEach((piece) => {
 		let pieceValue = 0;
 		switch (piece.toLowerCase()) {
@@ -1146,7 +1273,6 @@ function staticEvaluation(gameState) {
 			score -= pieceValue;
 		}
 	});
-
 	return score;
 }
 
@@ -1168,7 +1294,8 @@ function getAllChildrenStates(game, color) {
 	}
 	// sorter states efter score
 	states.sort((a, b) => {
-		return a.score - b.score;
+		// White maximizes, black minimizes
+		return color === "w" ? b.score - a.score : a.score - b.score;
 	});
 	return states;
 }
@@ -1636,4 +1763,126 @@ function getWestMoves(game, row, col) {
 		moves.push([rowCounter, colCounter - 1]);
 	}
 	return moves;
+}
+
+// prettier-ignore
+const pawnTable = [
+    [   0,   0,   0,   0,   0,   0,   0,   0],
+    [  50,  50,  50,  50,  50,  50,  50,  50],
+    [  10,  10,  20,  30,  30,  20,  10,  10],
+    [   5,   5,  10,  25,  25,  10,   5,   5],
+    [   0,   0,   0,  20,  20,   0,   0,   0],
+    [   5,  -5, -10,   0,   0, -10,  -5,   5],
+    [   5,  10,  10, -20, -20,  10,  10,   5],
+    [   0,   0,   0,   0,   0,   0,   0,   0],
+];
+
+// prettier-ignore
+const knightTable = [
+    [ -50, -40, -30, -30, -30, -30, -40, -50],
+    [ -40, -20,   0,   5,   5,   0, -20, -40],
+    [ -30,   5,  10,  15,  15,  10,   5, -30],
+    [ -30,   0,  15,  20,  20,  15,   0, -30],
+    [ -30,   5,  15,  20,  20,  15,   5, -30],
+    [ -30,   0,  10,  15,  15,  10,   0, -30],
+    [ -40, -20,   0,   0,   0,   0, -20, -40],
+    [ -50, -40, -30, -30, -30, -30, -40, -50],
+];
+
+// prettier-ignore
+const bishopTable = [
+    [ -20, -10, -10, -10, -10, -10, -10, -20],
+    [ -10,   5,   0,   0,   0,   0,   5, -10],
+    [ -10,  10,  10,  10,  10,  10,  10, -10],
+    [ -10,   0,  10,  10,  10,  10,   0, -10],
+    [ -10,   5,   5,  10,  10,   5,   5, -10],
+    [ -10,   0,   5,  10,  10,   5,   0, -10],
+    [ -10,   0,   0,   0,   0,   0,   0, -10],
+    [ -20, -10, -10, -10, -10, -10, -10, -20],
+];
+
+// prettier-ignore
+const rookTable = [
+    [   0,   0,   0,   5,   5,   0,   0,   0],
+    [  -5,   0,   0,   0,   0,   0,   0,  -5],
+    [  -5,   0,   0,   0,   0,   0,   0,  -5],
+    [  -5,   0,   0,   0,   0,   0,   0,  -5],
+    [  -5,   0,   0,   0,   0,   0,   0,  -5],
+    [  -5,   0,   0,   0,   0,   0,   0,  -5],
+    [   5,  10,  10,  10,  10,  10,  10,   5],
+    [   0,   0,   0,   0,   0,   0,   0,   0],
+];
+
+// prettier-ignore
+const queenTable = [
+    [ -20, -10, -10,  -5,  -5, -10, -10, -20],
+    [ -10,   0,   0,   0,   0,   0,   0, -10],
+    [ -10,   5,   5,   5,   5,   5,   0, -10],
+    [  -5,   0,   5,   5,   5,   5,   0,  -5],
+    [   0,   0,   5,   5,   5,   5,   0,  -5],
+    [ -10,   0,   5,   5,   5,   5,   0, -10],
+    [ -10,   0,   0,   0,   0,   0,   0, -10],
+    [ -20, -10, -10,  -5,  -5, -10, -10, -20],
+];
+
+// prettier-ignore
+const kingMiddleGameTable = [
+	[ -30, -40, -40, -50, -50, -40, -40, -30],
+	[ -30, -40, -40, -50, -50, -40, -40, -30],
+	[ -30, -40, -40, -50, -50, -40, -40, -30],
+	[ -30, -40, -40, -50, -50, -40, -40, -30],
+	[ -20, -30, -30, -40, -40, -30, -30, -20],
+	[ -10, -20, -20, -20, -20, -20, -20, -10],
+	[  20,  20,   0,   0,   0,   0,  20,  20],
+	[  20,  30,  10,   0,   0,  10,  30,  20],
+];
+
+// prettier-ignore
+const kingEndGameTable = [
+	[ -50, -40, -30, -20, -20, -30, -40, -50],
+	[ -30, -20, -10,   0,   0, -10, -20, -30],
+	[ -30, -10,  20,  30,  30,  20, -10, -30],
+	[ -30, -10,  30,  40,  40,  30, -10, -30],
+	[ -30, -10,  30,  40,  40,  30, -10, -30],
+	[ -30, -10,  20,  30,  30,  20, -10, -30],
+	[ -30, -30,   0,   0,   0,   0, -30, -30],
+	[ -50, -30, -30, -30, -30, -30, -30, -50],
+];
+
+function evaluatePawnSquare(piece, row, col) {
+	// Reverse the table for black pawns
+	let table = piece === "P" ? pawnTable : pawnTable.slice().reverse();
+	return table[row][col];
+}
+
+function evaluateKnightSquare(piece, row, col) {
+	// Reverse the table for black knights
+	let table = piece === "N" ? knightTable : knightTable.slice().reverse();
+	return table[row][col];
+}
+
+function evaluateBishopSquare(piece, row, col) {
+	// Reverse the table for black bishops
+	let table = piece === "B" ? bishopTable : bishopTable.slice().reverse();
+	return table[row][col];
+}
+
+function evaluateRookSquare(piece, row, col) {
+	// Reverse the table for black rooks
+	let table = piece === "R" ? rookTable : rookTable.slice().reverse();
+	return table[row][col];
+}
+
+function evaluateQueenSquare(piece, row, col) {
+	// Reverse the table for black queens
+	let table = piece === "Q" ? queenTable : queenTable.slice().reverse();
+	return table[row][col];
+}
+
+function evaluateKingSquare(piece, row, col, gamePhase) {
+	let table =
+		gamePhase === "middlegame" ? kingMiddleGameTable : kingEndGameTable;
+	// Reverse the table for black kings
+	table = piece === "K" ? table : table.slice().reverse();
+	return table[row][col];
 }
