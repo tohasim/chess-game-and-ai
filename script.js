@@ -1031,6 +1031,15 @@ class GameState {
 	}
 }
 
+function isAttacked(position, gameState) {
+	//TODO: Kode til at tjekke om position er under angreb
+}
+
+function checkForCheck(gameState, color) {
+	//TODO: Få fat i kongens position fra gamestate
+	//TODO: Kald isAttacked med kongens position og gamestate
+}
+
 let gameState = null;
 
 function initSearchModel() {
@@ -1116,8 +1125,8 @@ function alphaBeta(game, alpha, beta, depth, isMaximizingPlayer) {
 	if (depth === 0) {
 		return { score: game.score, state: game };
 	}
-	if (checkForCheckedKing(game, isMaximizingPlayer ? "w" : "b")) {
-		return { score: isMaximizingPlayer ? -10000 : 10000, state: game };
+	if (checkForCheckedKing(game, isMaximizingPlayer ? "b" : "w")) {
+		return { score: isMaximizingPlayer ? 10000 : -10000, state: game };
 	}
 	// If node is a max node
 	if (isMaximizingPlayer) {
