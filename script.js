@@ -1094,7 +1094,7 @@ function getBestMove() {
 function checkForCheckedKing(game, color) {
 	const kingPosition =
 		color === "w" ? game.whiteKingPosition : game.blackKingPosition;
-	const children = getAllChildrenStates(game, color);
+	const children = getAllChildrenStates(game, color === "w" ? "b" : "w");
 	for (const child of children) {
 		if (
 			child.searchModel[kingPosition.row][kingPosition.col].toLowerCase() !==
