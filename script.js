@@ -888,7 +888,7 @@ function movePieceInModel(piece, index) {
 				break;
 			case 62:
 				{
-					model[piece.row][5] = model[piece.row][0];
+					model[piece.row][5] = model[piece.row][7];
 					model[piece.row][7] = new Piece();
 				}
 				break;
