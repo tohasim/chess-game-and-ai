@@ -20,14 +20,20 @@ body {
 	justify-items: center;
 	line-height: 64px;
 	cursor: pointer;
-	color: red;
+	position: relative;
+	font-family: "Lucida Sans", "Lucida Sans Regular", "Lucida Grande",
+		"Lucida Sans Unicode", Geneva, Verdana, sans-serif;
+	text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000,
+		1px 1px 0 #000;
 }
 
 .white {
 	background-color: white;
+	color: rgb(88, 38, 7);
 }
 .black {
 	background-color: rgb(88, 38, 7);
+	color: white;
 }
 
 .highlight {
@@ -43,14 +49,14 @@ body {
 	justify-content: center;
 	font-size: 40px;
 	margin: 30px;
-
 }
 
 #center-button {
 	display: none;
 	justify-content: center;
 }
-img, svg {
+img,
+svg {
 	height: 60px;
 	width: auto;
 }
@@ -65,21 +71,21 @@ img, svg {
 }
 
 #playerTurn {
-	font-weight: bold; 
-	color: white; 
-	text-shadow: 2px 2px 4px #000000
+	font-weight: bold;
+	color: white;
+	text-shadow: 2px 2px 4px #000000;
 }
 
 #notAllowedMessage {
-    position: fixed;
-    top: 30%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 2em;
-    color: red;
-    z-index: 9999;
-    opacity: 1;
-    transition: opacity 0.5s ease-in-out;
+	position: fixed;
+	top: 30%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	font-size: 2em;
+	color: red;
+	z-index: 9999;
+	opacity: 1;
+	transition: opacity 0.5s ease-in-out;
 	font-weight: bold;
 	font-size: 100px;
 }
@@ -87,5 +93,19 @@ img, svg {
 #new-game:hover {
 	background-color: lightgreen;
 	border-color: lightgreen;
-	
+}
+
+.text-element {
+	position: absolute;
+	height: 15px;
+}
+
+.row-counter {
+	top: -20px;
+	left: 5;
+}
+
+.column-counter {
+	bottom: 25px;
+	right: 0;
 }

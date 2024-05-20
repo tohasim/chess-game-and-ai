@@ -111,7 +111,7 @@ function showBoard() {
 			const newCell = document.createElement("div");
 			newCell.setAttribute("data-index", index);
 			// TODO: For debugging, could probably be removed
-			newCell.textContent = `${index}`;
+			//newCell.textContent = `${index}`;
 			newCell.classList.add("cell");
 			// Create the chess pattern
 			(i + 1 * 8 + j) % 2 === 0
@@ -122,6 +122,20 @@ function showBoard() {
 				// Insert the icon
 				newCell.style.backgroundImage = `url(${model[i][j].icon})`;
 				newCell.style.backgroundSize = "cover";
+			}
+			if (i == 0) {
+				const text = document.createElement("div");
+				text.textContent = String.fromCharCode(65 + j);
+				text.classList.add("column-counter");
+				text.classList.add("text-element");
+				newCell.appendChild(text);
+			}
+			if (j == 0) {
+				const text = document.createElement("div");
+				text.textContent = i + 1;
+				text.classList.add("row-counter");
+				text.classList.add("text-element");
+				newCell.appendChild(text);
 			}
 			// Add new cell to board
 			board.appendChild(newCell);
