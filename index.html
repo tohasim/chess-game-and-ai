@@ -11,11 +11,22 @@
 			crossorigin="anonymous"
 		/>
 		<link rel="stylesheet" href="style.css" />
-		<link rel="icon" type="image/x-icon" href="Chess_pieces/WN.png"/>
+		<link rel="icon" type="image/x-icon" href="Chess_pieces/WN.png" />
 	</head>
 	<body>
 		<div class="playerTurnWrapper">
-			<a>It's <span id="playerTurn" style="font-weight: bold; color: white; text-shadow: 2px 2px 4px #000000;">White</span>'s Turn</a>
+			<a
+				>It's
+				<span
+					id="playerTurn"
+					style="
+						font-weight: bold;
+						color: white;
+						text-shadow: 2px 2px 4px #000000;
+					"
+					>White</span
+				>'s Turn</a
+			>
 		</div>
 
 		<div id="board"></div>
@@ -23,6 +34,18 @@
 			<label for="game-state-input">Go to state: </label>
 			<input id="game-state-input" name="game-state-input" />
 			<button id="game-state-button">Go</button>
+
+			<div id="ai" style="float: right">
+				<div class="form-check form-switch">
+					<input
+						class="form-check-input"
+						type="checkbox"
+						role="switch"
+						id="ai-switch"
+					/>
+					<label class="form-check-label" for="ai-switch">Toggle AI </label>
+				</div>
+			</div>
 		</div>
 		<div id="moveCounter">Move nr.</div>
 
@@ -92,9 +115,9 @@
 							Go Back
 						</button>
 						<button
-								class="btn btn-primary"
-								data-bs-target="#exampleModalToggle3"
-								data-bs-toggle="modal"
+							class="btn btn-primary"
+							data-bs-target="#exampleModalToggle3"
+							data-bs-toggle="modal"
 						>
 							Go to Black
 						</button>
@@ -103,11 +126,11 @@
 			</div>
 		</div>
 		<div
-				class="modal fade"
-				id="exampleModalToggle3"
-				aria-hidden="true"
-				aria-labelledby="exampleModalToggleLabel2"
-				tabindex="-1"
+			class="modal fade"
+			id="exampleModalToggle3"
+			aria-hidden="true"
+			aria-labelledby="exampleModalToggleLabel2"
+			tabindex="-1"
 		>
 			<div class="modal-dialog modal-dialog-scrollable">
 				<div class="modal-content">
@@ -116,10 +139,10 @@
 							Blackpiece movement overview
 						</h1>
 						<button
-								type="button"
-								class="btn-close"
-								data-bs-dismiss="modal"
-								aria-label="Close"
+							type="button"
+							class="btn-close"
+							data-bs-dismiss="modal"
+							aria-label="Close"
 						></button>
 					</div>
 					<div class="modal-body">
@@ -127,9 +150,9 @@
 					</div>
 					<div class="modal-footer">
 						<button
-								class="btn btn-primary"
-								data-bs-target="#exampleModalToggle2"
-								data-bs-toggle="modal"
+							class="btn btn-primary"
+							data-bs-target="#exampleModalToggle2"
+							data-bs-toggle="modal"
 						>
 							Go to White
 						</button>
@@ -149,13 +172,17 @@
 				class="btn btn-primary"
 				data-bs-target="#exampleModalToggle3"
 				data-bs-toggle="modal"
-				style="margin-left: 10px;"
+				style="margin-left: 10px"
 			>
 				View Black Pieces
 			</button>
 			<button
 				class="btn btn-primary"
-				style="margin-left: 10px; background-color: green; border-color: darkgreen;"
+				style="
+					margin-left: 10px;
+					background-color: green;
+					border-color: darkgreen;
+				"
 				id="new-game"
 			>
 				New Game
