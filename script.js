@@ -897,24 +897,28 @@ function movePieceInModel(piece, index) {
 			case 58:
 				{
 					model[piece.row][3] = model[piece.row][0];
+					model[piece.row][3].col = 3;
 					model[piece.row][0] = new Piece();
 				}
 				break;
 			case 62:
 				{
 					model[piece.row][5] = model[piece.row][7];
+					model[piece.row][5].col = 5;
 					model[piece.row][7] = new Piece();
 				}
 				break;
 			case 2:
 				{
 					model[piece.row][3] = model[piece.row][0];
+					model[piece.row][3].col = 3;
 					model[piece.row][0] = new Piece();
 				}
 				break;
 			case 6:
 				{
 					model[piece.row][5] = model[piece.row][7];
+					model[piece.row][5].col = 5;
 					model[piece.row][7] = new Piece();
 				}
 				break;
