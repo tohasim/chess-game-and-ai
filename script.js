@@ -630,7 +630,6 @@ function getAvailableMoves(piece) {
 					}
 				}
 			}
-			console.log(castleMoves);
 			break;
 		}
 		case "q": {
@@ -1032,13 +1031,27 @@ class GameState {
 }
 
 function isAttacked(position, gameState) {
-	//TODO: Kode til at tjekke om position er under angreb
+	// check if the given position is attacked by any of the opponent's pieces
+	const opponentColor = gameState.player === "w" ? "b" : "w";
+	const opponentPieces = opponentColor === "w" ? gameState.whitePieces : gameState.blackPieces;
+	for (const piece of opponentPieces) {
+		const moves = getAvailableMoves(piece);
+		for (const move of moves) {
+			if (move[0] === position.row && move[1] === position.col) {
+				return true;
+			}
+		}
+	}
+	return false;
+
 }
 
 function checkForCheck(gameState, color) {
-	//TODO: Få fat i kongens position fra gamestate
-	//TODO: Kald isAttacked med kongens position og gamestate
+	const king = getKing(currentPlayer)
+	const kingPosition = { row: king.row, col: king.col };
+	return isAttacked(kingPosition, gameState);
 }
+
 
 let gameState = null;
 
