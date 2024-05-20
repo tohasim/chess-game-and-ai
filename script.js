@@ -123,6 +123,20 @@ function showBoard() {
 				newCell.style.backgroundImage = `url(${model[i][j].icon})`;
 				newCell.style.backgroundSize = "cover";
 			}
+			if (i == 0) {
+				const text = document.createElement("div");
+				text.textContent = String.fromCharCode(65 + j);
+				text.classList.add("column-counter");
+				text.classList.add("text-element");
+				newCell.appendChild(text);
+			}
+			if (j == 0) {
+				const text = document.createElement("div");
+				text.textContent = i + 1;
+				text.classList.add("row-counter");
+				text.classList.add("text-element");
+				newCell.appendChild(text);
+			}
 			// Add new cell to board
 			board.appendChild(newCell);
 		}
@@ -606,26 +620,32 @@ function getAvailableMoves(piece) {
 			if (piece.moves === 0) {
 				if (
 					model[piece.row][0].moves === 0 &&
+					model[piece.row][0].value.toLowerCase() === "r" &&
 					model[piece.row][1].value === "" &&
 					model[piece.row][2].value === "" &&
 					model[piece.row][3].value === ""
 				) {
 					moves.push([0, -2]);
 					if (piece.color === "w") {
+						castleMoves = castleMoves.filter((move) => move !== "wQ");
 						castleMoves.push("wQ");
 					} else {
+						castleMoves = castleMoves.filter((move) => move !== "bq");
 						castleMoves.push("bq");
 					}
 				}
 				if (
 					model[piece.row][7].moves === 0 &&
+					model[piece.row][7].value.toLowerCase() === "r" &&
 					model[piece.row][6].value === "" &&
 					model[piece.row][5].value === ""
 				) {
 					moves.push([0, 2]);
 					if (piece.color === "w") {
+						castleMoves = castleMoves.filter((move) => move !== "wK");
 						castleMoves.push("wK");
 					} else {
+						castleMoves = castleMoves.filter((move) => move !== "bk");
 						castleMoves.push("bk");
 					}
 				}
@@ -871,27 +891,40 @@ function movePieceInModel(piece, index) {
 	// castling move. check castleMoves array for which rook to move
 	// the big and small letters does the same, but indicate different color. consider deleting later.
 	console.log(castleMoves, "castleMoves");
-	if (castleMoves.includes("bq")) {
-		model[piece.row][3] = model[piece.row][0];
-		model[piece.row][0] = new Piece();
+	if (piece.value.toLowerCase() === "k") {
+		switch (parseInt(index)) {
+			case 58:
+				{
+					model[piece.row][3] = model[piece.row][0];
+					model[piece.row][3].col = 3;
+					model[piece.row][0] = new Piece();
+				}
+				break;
+			case 62:
+				{
+					model[piece.row][5] = model[piece.row][7];
+					model[piece.row][5].col = 5;
+					model[piece.row][7] = new Piece();
+				}
+				break;
+			case 2:
+				{
+					model[piece.row][3] = model[piece.row][0];
+					model[piece.row][3].col = 3;
+					model[piece.row][0] = new Piece();
+				}
+				break;
+			case 6:
+				{
+					model[piece.row][5] = model[piece.row][7];
+					model[piece.row][5].col = 5;
+					model[piece.row][7] = new Piece();
+				}
+				break;
+		}
+		castleMoves = [];
 	}
-	if (castleMoves.includes("wQ")) {
-		model[piece.row][3] = model[piece.row][0];
-		model[piece.row][0] = new Piece();
-	}
-	if (castleMoves.includes("bk")) {
-		model[piece.row][5] = model[piece.row][7];
-		model[piece.row][7] = new Piece();
-	}
-	if (castleMoves.includes("wK")) {
-		model[piece.row][5] = model[piece.row][7];
-		model[piece.row][7] = new Piece();
-	}
-	//en passant move
-
-	console.log(model);
 }
-
 function checkCheck(piece) {
 	const opponentKing = getKing(currentPlayer === "w" ? "b" : "w");
 	var moves = JSON.stringify(getAvailableMoves(piece));
@@ -986,7 +1019,7 @@ function switchTurns() {
 		currColor === "white"
 			? "2px 2px 4px rgb(150, 150, 150)"
 			: "2px 2px 4px #000000";
-	if (currentPlayer === "b") {
+	if (currentPlayer === "b" && document.getElementById("ai-switch").checked) {
 		sleep(10).then(() => {
 			let bestMove = getBestMove();
 			let bestPiece =
@@ -1082,11 +1115,11 @@ function getBestMove() {
 	let bestMove = null;
 	initSearchModel();
 	const startTime = new Date().getTime();
-	const endTime = startTime + 5000;
+	const endTime = startTime + 15000;
 	let depth = 1;
-	let maxDepth = 4;
-	while (new Date().getTime() < endTime && depth <= maxDepth) {
-		bestMove = alphaBeta(gameState, -Infinity, Infinity, depth, false);
+	let maxDepth = 14;
+	while (depth <= maxDepth && endTime > new Date().getTime()) {
+		bestMove = alphaBeta(gameState, -Infinity, Infinity, depth, false, endTime);
 		depth++;
 	}
 	console.log(depth - 1);
@@ -1122,9 +1155,9 @@ function checkForCheckMate(game, color) {
 	}
 }
 
-function alphaBeta(game, alpha, beta, depth, isMaximizingPlayer) {
+function alphaBeta(game, alpha, beta, depth, isMaximizingPlayer, endTime) {
 	// If node is a leaf node, return the static evaluation
-	if (depth === 0) {
+	if (depth === 0 || endTime < new Date().getTime()) {
 		return { score: game.score, state: game };
 	}
 	if (checkForCheckedKing(game, isMaximizingPlayer ? "b" : "w")) {
@@ -1138,7 +1171,7 @@ function alphaBeta(game, alpha, beta, depth, isMaximizingPlayer) {
 		// For each child
 		for (let child of children) {
 			// Value = alphaBeta(child, alpha, beta, depth - 1, false)
-			let value = alphaBeta(child, alpha, beta, depth - 1, false);
+			let value = alphaBeta(child, alpha, beta, depth - 1, false, endTime);
 			// alpha = max(alpha, value)
 			alpha = Math.max(alpha, value.score);
 			// If value.score > bestValue.score, update bestValue
@@ -1160,7 +1193,7 @@ function alphaBeta(game, alpha, beta, depth, isMaximizingPlayer) {
 		// For each child
 		for (let child of children) {
 			// Value = alphaBeta(child, alpha, beta, depth - 1, true)
-			let value = alphaBeta(child, alpha, beta, depth - 1, true);
+			let value = alphaBeta(child, alpha, beta, depth - 1, true, endTime);
 			// beta = min(beta, value)
 			beta = Math.min(beta, value.score);
 			// If value.score < bestValue.score, update bestValue
