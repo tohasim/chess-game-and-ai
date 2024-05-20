@@ -1032,22 +1032,11 @@ class GameState {
 
 function isAttacked(position, gameState) {
 	// check if the given position is attacked by any of the opponent's pieces
-	const opponentColor = gameState.player === "w" ? "b" : "w";
-	const opponentPieces = opponentColor === "w" ? gameState.whitePieces : gameState.blackPieces;
-	for (const piece of opponentPieces) {
-		const moves = getAvailableMoves(piece);
-		for (const move of moves) {
-			if (move[0] === position.row && move[1] === position.col) {
-				return true;
-			}
-		}
-	}
-	return false;
-
+	pawnAtta
 }
 
 function checkForCheck(gameState, color) {
-	const king = getKing(currentPlayer)
+	const king = color === "w" ? gameState.whiteKingPosition : gameState.blackKingPosition;
 	const kingPosition = { row: king.row, col: king.col };
 	return isAttacked(kingPosition, gameState);
 }
@@ -1335,10 +1324,12 @@ function movePieceInGame(game, piece, newRow, newCol) {
 		case "K":
 			game.castling = game.castling.replace("Q", "");
 			game.castling = game.castling.replace("K", "");
+			game.whiteKingPosition = { row: newRow, col: newCol };
 			break;
 		case "k":
 			game.castling = game.castling.replace("k", "");
 			game.castling = game.castling.replace("q", "");
+			game.blackKingPosition = { row: newRow, col: newCol };
 			break;
 		case "r":
 		case "R":
