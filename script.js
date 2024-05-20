@@ -111,7 +111,7 @@ function showBoard() {
 			const newCell = document.createElement("div");
 			newCell.setAttribute("data-index", index);
 			// TODO: For debugging, could probably be removed
-			//newCell.textContent = `${index}`;
+			newCell.textContent = `${index}`;
 			newCell.classList.add("cell");
 			// Create the chess pattern
 			(i + 1 * 8 + j) % 2 === 0
@@ -606,26 +606,32 @@ function getAvailableMoves(piece) {
 			if (piece.moves === 0) {
 				if (
 					model[piece.row][0].moves === 0 &&
+					model[piece.row][0].value.toLowerCase() === "r" &&
 					model[piece.row][1].value === "" &&
 					model[piece.row][2].value === "" &&
 					model[piece.row][3].value === ""
 				) {
 					moves.push([0, -2]);
 					if (piece.color === "w") {
+						castleMoves = castleMoves.filter((move) => move !== "wQ");
 						castleMoves.push("wQ");
 					} else {
+						castleMoves = castleMoves.filter((move) => move !== "bq");
 						castleMoves.push("bq");
 					}
 				}
 				if (
 					model[piece.row][7].moves === 0 &&
+					model[piece.row][7].value.toLowerCase() === "r" &&
 					model[piece.row][6].value === "" &&
 					model[piece.row][5].value === ""
 				) {
 					moves.push([0, 2]);
 					if (piece.color === "w") {
+						castleMoves = castleMoves.filter((move) => move !== "wK");
 						castleMoves.push("wK");
 					} else {
+						castleMoves = castleMoves.filter((move) => move !== "bk");
 						castleMoves.push("bk");
 					}
 				}
@@ -872,27 +878,36 @@ function movePieceInModel(piece, index) {
 	// castling move. check castleMoves array for which rook to move
 	// the big and small letters does the same, but indicate different color. consider deleting later.
 	console.log(castleMoves, "castleMoves");
-	if (castleMoves.includes("bq")) {
-		model[piece.row][3] = model[piece.row][0];
-		model[piece.row][0] = new Piece();
+	if (piece.value.toLowerCase() === "k") {
+		switch (parseInt(index)) {
+			case 58:
+				{
+					model[piece.row][3] = model[piece.row][0];
+					model[piece.row][0] = new Piece();
+				}
+				break;
+			case 62:
+				{
+					model[piece.row][5] = model[piece.row][0];
+					model[piece.row][7] = new Piece();
+				}
+				break;
+			case 2:
+				{
+					model[piece.row][3] = model[piece.row][0];
+					model[piece.row][0] = new Piece();
+				}
+				break;
+			case 6:
+				{
+					model[piece.row][5] = model[piece.row][7];
+					model[piece.row][7] = new Piece();
+				}
+				break;
+		}
+		castleMoves = [];
 	}
-	if (castleMoves.includes("wQ")) {
-		model[piece.row][3] = model[piece.row][0];
-		model[piece.row][0] = new Piece();
-	}
-	if (castleMoves.includes("bk")) {
-		model[piece.row][5] = model[piece.row][7];
-		model[piece.row][7] = new Piece();
-	}
-	if (castleMoves.includes("wK")) {
-		model[piece.row][5] = model[piece.row][7];
-		model[piece.row][7] = new Piece();
-	}
-	//en passant move
-
-	console.log(model);
 }
-
 function checkCheck(piece) {
 	const opponentKing = getKing(currentPlayer === "w" ? "b" : "w");
 	var moves = JSON.stringify(getAvailableMoves(piece));
