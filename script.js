@@ -80,18 +80,10 @@ function handleClicks(event) {
 		}
 	}
 	if (moveCounter === 100) {
-		$("#exampleModalToggle").modal("show");
-		gameOver = true;
-		document.getElementById("center-button").style.display = "flex";
-		document.getElementById("new-game").addEventListener("click", () => {
-			const fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w";
-			setModelState(fen);
-			showBoard();
-			moveCounter = 0;
-			showMoveCounter();
-			gameOver = false;
-			document.getElementById("center-button").style.display = "none";
-		});
+		let gameOverTitle = document.getElementById("gameOverTitle");
+		let gameOverText = document.getElementById("gameOverText");
+		gameOverTitle.textContent = "Tie";
+		gameOverText.textContent = "You've reached a total of 50 moves";
 		showHowManyTimesEachPieceHasMoved();
 	}
 }
@@ -185,6 +177,18 @@ const CHESS_PIECE_NAMES = {
 function showHowManyTimesEachPieceHasMoved() {
 	let whitePieceMovesHistory = document.getElementById("whitePiece");
 	let blackPieceMovesHistory = document.getElementById("blackPiece");
+	$("#exampleModalToggle").modal("show");
+	gameOver = true;
+	document.getElementById("center-button").style.display = "flex";
+	document.getElementById("new-game").addEventListener("click", () => {
+		const fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w";
+		setModelState(fen);
+		showBoard();
+		moveCounter = 0;
+		showMoveCounter();
+		gameOver = false;
+		document.getElementById("center-button").style.display = "none";
+	});
 
 	// WhitePiece Loop
 	for (let i = 0; i < whitePieces.length; i++) {
@@ -897,28 +901,24 @@ function movePieceInModel(piece, index) {
 			case 58:
 				{
 					model[piece.row][3] = model[piece.row][0];
-					model[piece.row][3].col = 3;
 					model[piece.row][0] = new Piece();
 				}
 				break;
 			case 62:
 				{
 					model[piece.row][5] = model[piece.row][7];
-					model[piece.row][5].col = 5;
 					model[piece.row][7] = new Piece();
 				}
 				break;
 			case 2:
 				{
 					model[piece.row][3] = model[piece.row][0];
-					model[piece.row][3].col = 3;
 					model[piece.row][0] = new Piece();
 				}
 				break;
 			case 6:
 				{
 					model[piece.row][5] = model[piece.row][7];
-					model[piece.row][5].col = 5;
 					model[piece.row][7] = new Piece();
 				}
 				break;
@@ -999,6 +999,20 @@ function getKing(color) {
 				return model[i][j];
 			}
 		}
+	}
+	if(color === "w" ){
+		let gameOverTitle = document.getElementById("gameOverTitle");
+		let gameOverText = document.getElementById("gameOverText");
+		gameOverTitle.textContent = "Black Win's";
+		gameOverText.textContent = "The White king died";
+		return showHowManyTimesEachPieceHasMoved();
+	}
+	if(color === "b" ){
+		let gameOverTitle = document.getElementById("gameOverTitle");
+		let gameOverText = document.getElementById("gameOverText");
+		gameOverTitle.textContent = "White Win's";
+		gameOverText.textContent = "The Black king died";
+		return showHowManyTimesEachPieceHasMoved();
 	}
 }
 
