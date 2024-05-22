@@ -1069,15 +1069,15 @@ function isAttacked(position, gameState) {
   //check for pawn attacks
   if (pawnAttacks) {
     for (const attacks of pawnAttacks) {
-      if (attacks[0] === position.row && attacks[1] === position.col) {
-        return true;
-      }
+      if (gameState.searchModel[attacks[0]][attacks[1]].toLowerCase() === "p") {
+		return true;
+	  }
     }
   }
   //check for knight attacks
   const knightAttacks = getKnightMoves(position, gameState);
   for (const attack of knightAttacks) {
-    if (gameState.searchModel[attack[0]][attack[1]] === "n") {
+    if (gameState.searchModel[attack[0]][attack[1]].toLowerCase() === "n") {
       return true;
     }
   }
@@ -1088,27 +1088,20 @@ function isAttacked(position, gameState) {
       return true;
     }
   }
-//   //check for rook attacks
-//   const rookAttacks = getRookMoves(position, gameState);
-//   for (const attack of rookAttacks) {
-//     if (gameState.searchModel[attack[0]][attack[1]] === "r") {
-//       return true;
-//     }
-//   }
-//   //check for queen attacks
-//   const queenAttacks = getQueenMoves(position, gameState);
-//   for (const attack of queenAttacks) {
-// 	if (gameState.searchModel[attack[0]][attack[1]] === "q") {
-// 	  return true;
-// 	}
-//   }
+  //check for rook attacks
+  const rookAttacks = getRookMoves(gameState, position.row, position.col);
+  for (const attack of rookAttacks) {
+	if (gameState.searchModel[attack[0]][attack[1]] === "r") {
+	  return true;
+	}
+  }
 }
 
 function checkForCheckedKing(gameState, color) {
   //get the king position and check if checked
   const kingPosition =
     color === "w" ? gameState.whiteKingPosition : gameState.blackKingPosition;
-  return isAttacked(kingPosition, gameState.searchModel);
+  return isAttacked(kingPosition, gameState);
 }
 
 let gameState = null;
