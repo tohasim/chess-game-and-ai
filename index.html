@@ -61,7 +61,7 @@
 				<div class="modal-content">
 					<div class="modal-header">
 						<h1 class="modal-title fs-5" id="exampleModalToggleLabel">
-							Game Over
+							<div id="gameOverTitle"></div>
 						</h1>
 						<button
 							type="button"
@@ -70,7 +70,7 @@
 							aria-label="Close"
 						></button>
 					</div>
-					<div class="modal-body">The Game is over</div>
+					<div class="modal-body" id="gameOverText"></div>
 					<div class="modal-footer">
 						<button
 							class="btn btn-primary"
@@ -165,6 +165,9 @@
 				class="btn btn-primary"
 				data-bs-target="#exampleModalToggle2"
 				data-bs-toggle="modal"
+				style="background-color: white;
+				color: #000000;
+				border-color: rgb(204, 204, 204);"
 			>
 				View White Pieces
 			</button>
@@ -172,7 +175,10 @@
 				class="btn btn-primary"
 				data-bs-target="#exampleModalToggle3"
 				data-bs-toggle="modal"
-				style="margin-left: 10px"
+				style="margin-left: 10px;
+				background-color: #000000;
+				color: white;
+				border-color: #292929;"
 			>
 				View Black Pieces
 			</button>
