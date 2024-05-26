@@ -70,30 +70,22 @@ function handleClicks(event) {
         notAllowedMessage.id = "notAllowedMessage";
         document.body.appendChild(notAllowedMessage);
 
-        setTimeout(() => {
-          notAllowedMessage.style.opacity = 0;
-          setTimeout(() => {
-            notAllowedMessage.parentNode.removeChild(notAllowedMessage);
-          }, 500);
-        }, 600);
-      }
-    }
-  }
-  if (moveCounter === 100) {
-    $("#exampleModalToggle").modal("show");
-    gameOver = true;
-    document.getElementById("center-button").style.display = "flex";
-    document.getElementById("new-game").addEventListener("click", () => {
-      const fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w";
-      setModelState(fen);
-      showBoard();
-      moveCounter = 0;
-      showMoveCounter();
-      gameOver = false;
-      document.getElementById("center-button").style.display = "none";
-    });
-    showHowManyTimesEachPieceHasMoved();
-  }
+				setTimeout(() => {
+					notAllowedMessage.style.opacity = 0;
+					setTimeout(() => {
+						notAllowedMessage.parentNode.removeChild(notAllowedMessage);
+					}, 500);
+				}, 600);
+			}
+		}
+	}
+	if (moveCounter === 100) {
+		let gameOverTitle = document.getElementById("gameOverTitle");
+		let gameOverText = document.getElementById("gameOverText");
+		gameOverTitle.textContent = "Tie";
+		gameOverText.textContent = "You've reached a total of 50 moves";
+		showHowManyTimesEachPieceHasMoved();
+	}
 }
 
 //#endregion
@@ -183,8 +175,20 @@ const CHESS_PIECE_NAMES = {
 };
 
 function showHowManyTimesEachPieceHasMoved() {
-  let whitePieceMovesHistory = document.getElementById("whitePiece");
-  let blackPieceMovesHistory = document.getElementById("blackPiece");
+	let whitePieceMovesHistory = document.getElementById("whitePiece");
+	let blackPieceMovesHistory = document.getElementById("blackPiece");
+	$("#exampleModalToggle").modal("show");
+	gameOver = true;
+	document.getElementById("center-button").style.display = "flex";
+	document.getElementById("new-game").addEventListener("click", () => {
+		const fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w";
+		setModelState(fen);
+		showBoard();
+		moveCounter = 0;
+		showMoveCounter();
+		gameOver = false;
+		document.getElementById("center-button").style.display = "none";
+	});
 
   // WhitePiece Loop
   for (let i = 0; i < whitePieces.length; i++) {
@@ -880,50 +884,46 @@ function movePieceInModel(piece, index) {
 
   checkIfMoveCounterCriteriaHasBeenFulFilled();
 
-  if (piece.value === "p" && (piece.row === 0 || piece.row === 7)) {
-    model[piece.row][piece.col].value = "q";
-    if (piece.row === 0) {
-      model[piece.row][piece.col].icon = "/Chess_pieces/BQ.png";
-    } else {
-      model[piece.row][piece.col].icon = "/Chess_pieces/WQ.png";
-    }
-  }
-  // castling move. check castleMoves array for which rook to move
-  // the big and small letters does the same, but indicate different color. consider deleting later.
-  console.log(castleMoves, "castleMoves");
-  if (piece.value.toLowerCase() === "k") {
-    switch (parseInt(index)) {
-      case 58:
-        {
-          model[piece.row][3] = model[piece.row][0];
-          model[piece.row][3].col = 3;
-          model[piece.row][0] = new Piece();
-        }
-        break;
-      case 62:
-        {
-          model[piece.row][5] = model[piece.row][7];
-          model[piece.row][5].col = 5;
-          model[piece.row][7] = new Piece();
-        }
-        break;
-      case 2:
-        {
-          model[piece.row][3] = model[piece.row][0];
-          model[piece.row][3].col = 3;
-          model[piece.row][0] = new Piece();
-        }
-        break;
-      case 6:
-        {
-          model[piece.row][5] = model[piece.row][7];
-          model[piece.row][5].col = 5;
-          model[piece.row][7] = new Piece();
-        }
-        break;
-    }
-    castleMoves = [];
-  }
+	if (piece.value === "p" && (piece.row === 0 || piece.row === 7)) {
+		model[piece.row][piece.col].value = "q";
+		if (piece.row === 0) {
+			model[piece.row][piece.col].icon = "/Chess_pieces/BQ.png";
+		} else {
+			model[piece.row][piece.col].icon = "/Chess_pieces/WQ.png";
+		}
+	}
+	// castling move. check castleMoves array for which rook to move
+	// the big and small letters does the same, but indicate different color. consider deleting later.
+	console.log(castleMoves, "castleMoves");
+	if (piece.value.toLowerCase() === "k") {
+		switch (parseInt(index)) {
+			case 58:
+				{
+					model[piece.row][3] = model[piece.row][0];
+					model[piece.row][0] = new Piece();
+				}
+				break;
+			case 62:
+				{
+					model[piece.row][5] = model[piece.row][7];
+					model[piece.row][7] = new Piece();
+				}
+				break;
+			case 2:
+				{
+					model[piece.row][3] = model[piece.row][0];
+					model[piece.row][0] = new Piece();
+				}
+				break;
+			case 6:
+				{
+					model[piece.row][5] = model[piece.row][7];
+					model[piece.row][7] = new Piece();
+				}
+				break;
+		}
+		castleMoves = [];
+	}
 }
 function checkCheck(piece) {
   const opponentKing = getKing(currentPlayer === "w" ? "b" : "w");
@@ -992,13 +992,27 @@ function getAllPiecesOfColor(color) {
 }
 
 function getKing(color) {
-  for (let i = 0; i < 8; i++) {
-    for (let j = 0; j < 8; j++) {
-      if (model[i][j].value === "k" && model[i][j].color === color) {
-        return model[i][j];
-      }
-    }
-  }
+	for (let i = 0; i < 8; i++) {
+		for (let j = 0; j < 8; j++) {
+			if (model[i][j].value === "k" && model[i][j].color === color) {
+				return model[i][j];
+			}
+		}
+	}
+	if(color === "w" ){
+		let gameOverTitle = document.getElementById("gameOverTitle");
+		let gameOverText = document.getElementById("gameOverText");
+		gameOverTitle.textContent = "Black Win's";
+		gameOverText.textContent = "The White king died";
+		return showHowManyTimesEachPieceHasMoved();
+	}
+	if(color === "b" ){
+		let gameOverTitle = document.getElementById("gameOverTitle");
+		let gameOverText = document.getElementById("gameOverText");
+		gameOverTitle.textContent = "White Win's";
+		gameOverText.textContent = "The Black king died";
+		return showHowManyTimesEachPieceHasMoved();
+	}
 }
 
 function checkIfMoveCounterCriteriaHasBeenFulFilled() {
