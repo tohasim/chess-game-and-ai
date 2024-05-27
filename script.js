@@ -1078,108 +1078,113 @@ class GameState {
 }
 
 function isAttacked(position, gameState) {
+  const inBounds = (row, col) => row >= 0 && row < 8 && col >= 0 && col < 8;
+
   if (gameState.player === "b") {
-    // //check for pawn attacks
-    const pawnAttacks = [
-      [1, 1],
-      [1, -1],
-    ];
-    for (const attack of pawnAttacks) {
-      if (gameState.searchModel[attack[0] + position.row][attack[1] + position.col] === "P") {
-        return true;
-      }
-    }
-   
-    //check for knight attacks
+    // check for pawn attacks
+    // const pawnAttacks = [
+    //   [1, -1],
+    //   [1, 1],
+    // ];
+    // for (const attack of pawnAttacks) {
+    //   const attackRow = position.row + attack[0];
+    //   const attackCol = position.col + attack[1];
+    //   if (inBounds(attackRow, attackCol) && gameState.searchModel[attackRow] && gameState.searchModel[attackRow][attackCol] === "P") {
+    //     return true;
+    //   }
+    // }
+
+    // check for knight attacks
     const knightAttacks = getKnightMoves(position, gameState);
     for (const attack of knightAttacks) {
-      if (gameState.searchModel[attack[0]][attack[1]] === "N") {
+      if (inBounds(attack[0], attack[1]) && gameState.searchModel[attack[0]][attack[1]] === "N") {
         return true;
       }
     }
-    //check for bishop attacks
+    // check for bishop attacks
     const bishopAttacks = getBishopMoves(gameState, position.row, position.col);
-
     if (bishopAttacks) {
       for (const attack of bishopAttacks) {
-        console.log(
-          gameState.searchModel[position.row + attack[0]][
-            position.col + attack[1]
-          ]
-        );
-        if (
-          gameState.searchModel[position.row + attack[0]][
-            position.col + attack[1]
-          ] === "B"
-        ) {
+        const attackRow = position.row + attack[0];
+        const attackCol = position.col + attack[1];
+        if (inBounds(attackRow, attackCol) && gameState.searchModel[attackRow][attackCol] === "B") {
           return true;
         }
       }
     }
-    //check for rook attacks
+    // check for rook attacks
     const rookAttacks = getRookMoves(gameState, position.row, position.col);
     for (const attack of rookAttacks) {
-      if (gameState.searchModel[attack[0]][attack[1]] === "R") {
+      const attackRow = attack[0];
+      const attackCol = attack[1];
+      if (inBounds(attackRow, attackCol) && gameState.searchModel[attackRow][attackCol] === "R") {
         return true;
       }
     }
-    //check for queen attacks
+    // check for queen attacks
     const queenAttacks = getQueenMoves(gameState, position.row, position.col);
     for (const attack of queenAttacks) {
-      if (gameState.searchModel[attack[0]][attack[1]] === "Q") {
+      const attackRow = attack[0];
+      const attackCol = attack[1];
+      if (inBounds(attackRow, attackCol) && gameState.searchModel[attackRow][attackCol] === "Q") {
         return true;
       }
     }
-
   } else {
-    //check for pawn attacks
-    let pawnAttacks = [
+    // check for pawn attacks
+    const pawnAttacks = [
       [-1, 1],
       [-1, -1],
     ];
-
-      for (const attack of pawnAttacks) {
-        if (gameState.searchModel[attack[0] + position.row][attack[1] + position.col] === "p") {
-          return true;
-        }
-      }
-   
-    //check for knight attacks
-    const knightAttacks = getKnightMoves(position, gameState);
-    for (const attack of knightAttacks) {
-      if (gameState.searchModel[attack[0]][attack[1]] === "n") {
+    for (const attack of pawnAttacks) {
+      const attackRow = position.row + attack[0];
+      const attackCol = position.col + attack[1];
+      if (inBounds(attackRow, attackCol) && gameState.searchModel[attackRow][attackCol] === "p") {
         return true;
       }
     }
-    //check for bishop attacks
+
+    // check for knight attacks
+    const knightAttacks = getKnightMoves(position, gameState);
+    for (const attack of knightAttacks) {
+      if (inBounds(attack[0], attack[1]) && gameState.searchModel[attack[0]][attack[1]] === "n") {
+        return true;
+      }
+    }
+    // check for bishop attacks
     const bishopAttacks = getBishopMoves(gameState, position.row, position.col);
     if (bishopAttacks) {
       for (const attack of bishopAttacks) {
-        if (
-          gameState.searchModel[position.row + attack[0]][
-            position.col + attack[1]
-          ] === "b"
-        ) {
+        const attackRow = position.row + attack[0];
+        const attackCol = position.col + attack[1];
+        if (inBounds(attackRow, attackCol) && gameState.searchModel[attackRow][attackCol] === "b") {
           return true;
         }
       }
     }
-    //check for rook attacks
+    // check for rook attacks
     const rookAttacks = getRookMoves(gameState, position.row, position.col);
     for (const attack of rookAttacks) {
-      if ( gameState.searchModel[attack[0] + position.row][attack[1] + position.col] === "r") {
+      const attackRow = attack[0] + position.row;
+      const attackCol = attack[1] + position.col;
+      if (inBounds(attackRow, attackCol) && gameState.searchModel[attackRow][attackCol] === "r") {
         return true;
       }
     }
-    //check for queen attacks
+    // check for queen attacks
     const queenAttacks = getQueenMoves(gameState, position.row, position.col);
     for (const attack of queenAttacks) {
-      if (gameState.searchModel[attack[0] + position.row][attack[1] + position.col] === "q") {
+      const attackRow = attack[0] + position.row;
+      const attackCol = attack[1] + position.col;
+      if (inBounds(attackRow, attackCol) && gameState.searchModel[attackRow][attackCol] === "q") {
         return true;
       }
     }
   }
+  return false;
 }
+
+
 
 function checkForCheckedKing(gameState, color) {
   //get the king position and check if checked
